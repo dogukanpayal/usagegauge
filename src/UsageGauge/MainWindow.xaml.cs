@@ -1,24 +1,26 @@
 using System;
-using System.Diagnostics;
-using System.IO;
-using System.Text;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using UsageGauge.Native;
+using UsageGauge.Services;
+using UsageGauge.ViewModels;
 
 namespace UsageGauge;
 
 /// <summary>
-/// Interaction logic for MainWindow.xaml
+/// UsageGauge ana masaüstü widget penceresi.
+/// Masaüstü katmanında kalır, Win+D'de görünürlüğünü korur, odak çalmaz ve iki monitör arasında serbestçe taşınabilir.
 /// </summary>
 public partial class MainWindow : Window
 {
     private readonly DesktopWindowManager _windowManager;
-    private readonly DispatcherTimer _foregroundTimer;
-    private int _heartbeatCounter;
+    private readonly ConfigService _configService;
+    private readonly MainWindowViewModel _viewModel;
+    private readonly DispatcherTimer _clockTimer;
 
     // Sürükleme durumu
     private bool _isDragging;
@@ -26,24 +28,25 @@ public partial class MainWindow : Window
     private double _initialLeft;
     private double _initialTop;
 
-    // Odak karşılaştırma durumu (Test 3)
-    private IntPtr _baselineHwnd = IntPtr.Zero;
-    private string _baselineTitle = string.Empty;
-
     public MainWindow()
     {
         InitializeComponent();
 
-        _windowManager = new DesktopWindowManager(this, Dispatcher);
-        _windowManager.StatusChanged += OnWindowManagerStatusChanged;
+        _configService = new ConfigService();
+        _viewModel = new MainWindowViewModel();
+        DataContext = _viewModel;
 
-        _foregroundTimer = new DispatcherTimer
+        _windowManager = new DesktopWindowManager(this, Dispatcher);
+
+        _clockTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
-            Interval = TimeSpan.FromMilliseconds(300)
+            Interval = TimeSpan.FromSeconds(1)
         };
-        _foregroundTimer.Tick += ForegroundTimer_Tick;
+        _clockTimer.Tick += ClockTimer_Tick;
 
         SourceInitialized += MainWindow_SourceInitialized;
+        Loaded += MainWindow_Loaded;
+        Closing += (s, e) => SaveCurrentState();
         Closed += MainWindow_Closed;
 
         // Masaüstü widget'ı asla simge durumuna geçmemelidir
@@ -58,122 +61,156 @@ public partial class MainWindow : Window
 
     private void MainWindow_SourceInitialized(object? sender, EventArgs e)
     {
-        bool initOk = _windowManager.Initialize();
-        if (initOk)
-        {
-            TxtHwnd.Text = $"0x{_windowManager.Handle.ToInt64():X8}";
-            UpdateCoordinatesDisplay();
-            _foregroundTimer.Start();
-        }
-        else
-        {
-            TxtStatus.Text = "Hata: DesktopWindowManager başlatılamadı.";
-        }
+        // 1. DesktopWindowManager başlat (WispDock dinamik Z-order mimarisi)
+        _windowManager.Initialize();
+
+        // 2. Kaydedilen yapılandırmayı yükle ve ekran sınırlarını doğrula (SourceInitialized aşamasında dosyaya yazılmaz)
+        LoadAndApplyConfig(saveIfNewOrAdjusted: false);
+
+        // 3. Çoklu monitör menüsünü hazırla
+        PopulateMonitorMenu();
+
+        // 4. Geri sayım ve otomatik sorgu zamanlayıcısını başlat
+        _clockTimer.Start();
+
+        // 5. İlk taze kota sorgularını eşzamansız başlat
+        _ = _viewModel.StartInitialRefreshAsync();
+    }
+
+    private void MainWindow_Loaded(object? sender, EventArgs e)
+    {
+        // Pencere düzeni hesaplanıp ActualWidth/ActualHeight belirlendikten sonra sınır denetimini tazele
+        // ve dosya yoksa veya koordinat düzeltildiyse ilk kaydı yap
+        LoadAndApplyConfig(saveIfNewOrAdjusted: true);
     }
 
     private void MainWindow_Closed(object? sender, EventArgs e)
     {
-        _foregroundTimer.Stop();
+        _clockTimer.Stop();
+        // SaveCurrentState() Closing olayında bir kez çalıştırıldığı için burada mükerrer kayıt yapılmaz
+        _viewModel.Dispose();
         _windowManager.Dispose();
     }
 
-    private void OnWindowManagerStatusChanged(string message)
+    private void ClockTimer_Tick(object? sender, EventArgs e)
     {
-        Dispatcher.Invoke(() =>
-        {
-            TxtStatus.Text = message;
-            TxtZOrderStatus.Text = _windowManager.IsDesktopActive
-                ? "Masaüstü (HWND_TOPMOST)"
-                : "Normal Uygulama (HWND_NOTOPMOST)";
-            TxtZOrderStatus.Foreground = _windowManager.IsDesktopActive
-                ? new SolidColorBrush(Color.FromRgb(56, 189, 248))
-                : new SolidColorBrush(Color.FromRgb(74, 222, 128));
-        });
+        _viewModel.Tick(DateTimeOffset.UtcNow);
     }
 
-    #region Canlı Odak & Teşhis İzleme
+    #region Konum ve Yapılandırma Yönetimi
 
-    private void ForegroundTimer_Tick(object? sender, EventArgs e)
+    private void LoadAndApplyConfig(bool saveIfNewOrAdjusted = false)
     {
-        IntPtr fgHwnd = NativeMethods.GetForegroundWindow();
-        string currentTitle = GetWindowTitle(fgHwnd);
-        TxtCurrentWindow.Text = $"{currentTitle} (0x{fgHwnd.ToInt64():X8})";
+        AppConfig config = _configService.LoadConfig();
 
-        // Odak durumunu değerlendir
-        if (_baselineHwnd == IntPtr.Zero)
-        {
-            TxtFocusResult.Text = "Referans pencere henüz kilitlenmedi";
-            TxtFocusResult.Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184)); // Gri
-        }
-        else if (fgHwnd == _windowManager.Handle)
-        {
-            TxtFocusResult.Text = "HATA: UsageGauge odağı çaldı! ✕";
-            TxtFocusResult.Foreground = new SolidColorBrush(Color.FromRgb(239, 68, 68)); // Kırmızı
-        }
-        else if (fgHwnd == _baselineHwnd)
-        {
-            TxtFocusResult.Text = "BAŞARILI: Odak referansta korundu ✓";
-            TxtFocusResult.Foreground = new SolidColorBrush(Color.FromRgb(74, 222, 128)); // Yeşil
-        }
-        else
-        {
-            TxtFocusResult.Text = "UYARI: Farklı 3. pencereye geçildi (Geçersiz!)";
-            TxtFocusResult.Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11)); // Turuncu
-        }
+        DpiScale dpi = VisualTreeHelper.GetDpi(this);
+        IReadOnlyList<MonitorDescriptor> monitors = ScreenHelper.GetMonitors(dpi);
 
-        // Periyodik kalp atışı teşhis kaydı (yaklaşık 10 saniyede bir kontrollü örnekleme)
-        if (++_heartbeatCounter % 30 == 0)
+        double width = ActualWidth > 0 ? ActualWidth : (Width > 0 ? Width : 340);
+        double height = ActualHeight > 0 ? ActualHeight : (Height > 0 ? Height : 460);
+
+        var (safeLeft, safeTop) = ConfigService.EnsureVisibleBounds(
+            config.WindowLeft,
+            config.WindowTop,
+            width,
+            height,
+            monitors,
+            config.MonitorDeviceName);
+
+        Left = safeLeft;
+        Top = safeTop;
+        Opacity = config.Opacity;
+
+        UpdateOpacityCheckmarks(config.Opacity);
+
+        // Yalnızca Loaded aşamasında ve gerekliyse ilk kaydı yap
+        if (saveIfNewOrAdjusted)
         {
-            DesktopDiagnostics.LogSnapshot(_windowManager.Handle, "Heartbeat");
+            if (!System.IO.File.Exists(_configService.ConfigFilePath) || safeLeft != config.WindowLeft || safeTop != config.WindowTop)
+            {
+                SaveCurrentState();
+            }
         }
     }
 
-    private static string GetWindowTitle(IntPtr hwnd)
+    private void SaveCurrentState()
     {
-        if (hwnd == IntPtr.Zero) return "(Boş)";
-        var sb = new StringBuilder(256);
-        NativeMethods.GetWindowText(hwnd, sb, 256);
-        string text = sb.ToString();
-        return string.IsNullOrWhiteSpace(text) ? "(Başlıksız)" : text;
+        DpiScale dpi = VisualTreeHelper.GetDpi(this);
+        IReadOnlyList<MonitorDescriptor> monitors = ScreenHelper.GetMonitors(dpi);
+
+        double actualW = ActualWidth > 0 ? ActualWidth : (Width > 0 ? Width : 340);
+        double actualH = ActualHeight > 0 ? ActualHeight : (Height > 0 ? Height : 460);
+
+        Rect currentRect = new(Left, Top, actualW, actualH);
+        // Pencere birden fazla monitöre taşıyorsa, pencerenin en büyük bölümünü içeren monitörü kaydet
+        MonitorDescriptor? dominantMonitor = ScreenHelper.FindDominantMonitor(currentRect, monitors);
+
+        var config = new AppConfig
+        {
+            WindowLeft = Left,
+            WindowTop = Top,
+            MonitorDeviceName = dominantMonitor?.DeviceName,
+            Opacity = Opacity
+        };
+
+        _configService.SaveConfig(config);
     }
 
-    private void BtnLockBaseline_Click(object sender, RoutedEventArgs e)
+    private void PopulateMonitorMenu()
     {
-        IntPtr fgHwnd = NativeMethods.GetForegroundWindow();
-        if (fgHwnd == _windowManager.Handle)
-        {
-            TxtStatus.Text = "Uyarı: Odak şu an UsageGauge üzerinde, kilitlenemez.";
-            return;
-        }
+        MenuMoveToMonitor.Items.Clear();
 
-        _baselineHwnd = fgHwnd;
-        _baselineTitle = GetWindowTitle(fgHwnd);
-        TxtBaselineWindow.Text = $"{_baselineTitle} (0x{_baselineHwnd.ToInt64():X8})";
-        TxtBaselineWindow.Foreground = new SolidColorBrush(Color.FromRgb(56, 189, 248));
-        TxtStatus.Text = $"Referans pencere kilitlendi: {_baselineTitle}.";
+        DpiScale dpi = VisualTreeHelper.GetDpi(this);
+        IReadOnlyList<MonitorDescriptor> monitors = ScreenHelper.GetMonitors(dpi);
+
+        for (int i = 0; i < monitors.Count; i++)
+        {
+            MonitorDescriptor mon = monitors[i];
+            MenuItem item = new()
+            {
+                Header = mon.DisplayName,
+                Tag = mon
+            };
+            item.Click += (s, e) =>
+            {
+                if (s is MenuItem mi && mi.Tag is MonitorDescriptor targetMon)
+                {
+                    MoveToMonitor(targetMon);
+                }
+            };
+            MenuMoveToMonitor.Items.Add(item);
+        }
+    }
+
+    private void MoveToMonitor(MonitorDescriptor targetMon)
+    {
+        // Hedef monitörün çalışma alanının sağ üst veya uygun bir yerine yerleştir
+        double newLeft = targetMon.WorkAreaDip.Left + 40;
+        double newTop = targetMon.WorkAreaDip.Top + 40;
+
+        Left = newLeft;
+        Top = newTop;
+
+        _windowManager.UpdateZOrder();
+        SaveCurrentState();
+    }
+
+    private void UpdateOpacityCheckmarks(double opacity)
+    {
+        MenuOpacity100.IsChecked = Math.Abs(opacity - 1.0) < 0.05;
+        MenuOpacity80.IsChecked = Math.Abs(opacity - 0.8) < 0.05;
+        MenuOpacity60.IsChecked = Math.Abs(opacity - 0.6) < 0.05;
     }
 
     #endregion
 
-    #region Sürükleme ve Taşıma (Odak Çalmadan, Çoklu Monitör DPI Uyumlu)
+    #region Sürükleme ve Taşıma (Odak Çalmadan, DPI Uyumlu)
 
     private void DragHandle_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.OriginalSource is DependencyObject depObj && FindVisualParent<Button>(depObj) != null)
         {
             return;
-        }
-
-        if (_baselineHwnd == IntPtr.Zero)
-        {
-            IntPtr fgHwnd = NativeMethods.GetForegroundWindow();
-            if (fgHwnd != _windowManager.Handle && fgHwnd != IntPtr.Zero)
-            {
-                _baselineHwnd = fgHwnd;
-                _baselineTitle = GetWindowTitle(fgHwnd);
-                TxtBaselineWindow.Text = $"{_baselineTitle} (0x{_baselineHwnd.ToInt64():X8})";
-                TxtBaselineWindow.Foreground = new SolidColorBrush(Color.FromRgb(56, 189, 248));
-            }
         }
 
         NativeMethods.GetCursorPos(out _dragStartCursor);
@@ -195,13 +232,15 @@ public partial class MainWindow : Window
         if (NativeMethods.GetCursorPos(out NativeMethods.POINT currentCursor))
         {
             DpiScale dpi = VisualTreeHelper.GetDpi(this);
-            double deltaX = (currentCursor.X - _dragStartCursor.X) / dpi.DpiScaleX;
-            double deltaY = (currentCursor.Y - _dragStartCursor.Y) / dpi.DpiScaleY;
+            double scaleX = dpi.DpiScaleX > 0 ? dpi.DpiScaleX : 1.0;
+            double scaleY = dpi.DpiScaleY > 0 ? dpi.DpiScaleY : 1.0;
+
+            double deltaX = (currentCursor.X - _dragStartCursor.X) / scaleX;
+            double deltaY = (currentCursor.Y - _dragStartCursor.Y) / scaleY;
 
             Left = _initialLeft + deltaX;
             Top = _initialTop + deltaY;
 
-            UpdateCoordinatesDisplay();
             e.Handled = true;
         }
     }
@@ -214,21 +253,19 @@ public partial class MainWindow : Window
             DragHandle.ReleaseMouseCapture();
             e.Handled = true;
 
-            // Sürükleme bitince Z-sırasını tazele
+            // Sürükleme bitince Z-sırasını tazele ve yeni konumu kaydet
             _windowManager.UpdateZOrder();
-            UpdateCoordinatesDisplay();
-            DesktopDiagnostics.LogSnapshot(_windowManager.Handle, "DragEnded");
+            SaveCurrentState();
         }
     }
 
     private void DragHandle_LostMouseCapture(object sender, MouseEventArgs e)
     {
-        _isDragging = false;
-    }
-
-    private void UpdateCoordinatesDisplay()
-    {
-        TxtCoords.Text = $"X: {(int)Left}, Y: {(int)Top}";
+        if (_isDragging)
+        {
+            _isDragging = false;
+            SaveCurrentState();
+        }
     }
 
     private static T? FindVisualParent<T>(DependencyObject child) where T : DependencyObject
@@ -241,36 +278,53 @@ public partial class MainWindow : Window
 
     #endregion
 
-    #region Buton Olayları
+    #region Kullanıcı Arayüzü ve Menü Olayları
+
+    private void BtnRefresh_Click(object sender, RoutedEventArgs e)
+    {
+        _ = _viewModel.TriggerManualRefreshAsync();
+    }
 
     private void BtnClose_Click(object sender, RoutedEventArgs e)
     {
         Close();
     }
 
-    private void BtnRefreshZOrder_Click(object sender, RoutedEventArgs e)
+    private void MenuRefresh_Click(object sender, RoutedEventArgs e)
     {
-        _windowManager.UpdateZOrder();
-        TxtStatus.Text = "Z-Sırası el ile güncellendi.";
+        _ = _viewModel.TriggerManualRefreshAsync();
     }
 
-    private void BtnOpenLog_Click(object sender, RoutedEventArgs e)
+    private void MenuResetPosition_Click(object sender, RoutedEventArgs e)
     {
-        try
+        DpiScale dpi = VisualTreeHelper.GetDpi(this);
+        IReadOnlyList<MonitorDescriptor> monitors = ScreenHelper.GetMonitors(dpi);
+        if (monitors.Count > 0)
         {
-            if (File.Exists(DesktopDiagnostics.LogFilePath))
-            {
-                Process.Start(new ProcessStartInfo("notepad.exe", DesktopDiagnostics.LogFilePath) { UseShellExecute = true });
-            }
-            else
-            {
-                TxtStatus.Text = "Teşhis günlüğü henüz oluşturulmadı.";
-            }
+            MonitorDescriptor primary = monitors.FirstOrDefault(m => m.IsPrimary) ?? monitors[0];
+            MoveToMonitor(primary);
         }
-        catch (Exception ex)
+        else
         {
-            TxtStatus.Text = $"Log açma hatası: {ex.Message}";
+            Left = 80;
+            Top = 80;
+            SaveCurrentState();
         }
+    }
+
+    private void MenuOpacity_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem item && item.Tag is string tagStr && double.TryParse(tagStr, System.Globalization.CultureInfo.InvariantCulture, out double op))
+        {
+            Opacity = Math.Clamp(op, 0.2, 1.0);
+            UpdateOpacityCheckmarks(Opacity);
+            SaveCurrentState();
+        }
+    }
+
+    private void MenuExit_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
     }
 
     #endregion

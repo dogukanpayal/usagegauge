@@ -119,6 +119,7 @@ T00.8a aşamasında doğrulanmış olan başsız CLI komutu çalıştırılacakt
   2. `Claude and GPT models` Grubu:
      - `id == "3p-5h"` → 5 Saatlik Havuz
      - `id == "3p-weekly"` → Haftalık Havuz
+     *(T05 Nihai Ürün Kapsamı Notu: Antigravity sağlayıcısı ve veri modeli bu grubu okuma yeteneğini korur; ancak T05 nihai ürün kararıyla widget UI katmanında yalnızca Gemini grubu listelenmektedir).*
 - **Alan Doğrulama:**
   - Kalan Yüzde: `remaining_fraction` (0.0 – 1.0 aralığı) doğrulanır; `remaining_fraction * 100` ile yüzde hesaplanır.
   - Sıfırlanma: `reset_time` (ISO 8601 UTC dizgisi) → `DateTimeOffset.Parse(reset_time)`.
@@ -190,7 +191,7 @@ T00.8a aşamasında doğrulanmış olan başsız CLI komutu çalıştırılacakt
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **T03** | **Masaüstü Katmanı & Pencere Spike'ı** | `src/UsageGauge/UsageGauge.csproj`, `src/UsageGauge/App.*`, `src/UsageGauge/MainWindow.*`, `src/UsageGauge/Native/*` | `dotnet build` 0 hata/uyarı | Normal pencerelerin arkasında kalma, `Win+D`, tıklama/sürükleme ve 2 monitör arasında taşıma testi | `Win+D` ile masaüstünde görünür kalamazsa veya normal pencerelerin önüne fırlarsa dur. |
 | **T04** | **Arka Uç Veri Sağlayıcıları** | `src/UsageGauge/Providers/*` (`ChatGptProvider`, `AntigravityProvider`) | Mock stdio/JSON ayrıştırma birim testleri (6 kota penceresi doğrulaması) | Canlı `codex app-server` ve `agy` çağrısı ile gerçek kotaları okuma | Herhangi bir sağlayıcı token harcaması/model turu tetiklerse dur. |
-| **T05** | **UI Birleştirme, Durum Yönetimi & Konum Kalıcılığı** | `src/UsageGauge/ViewModels/*`, `src/UsageGauge/Views/*`, `src/UsageGauge/Services/ConfigService.*` | Timer, durum geçişi ve ayar kaydetme/yükleme testleri | Kullanım ekranları kapalıyken 6 kotanın izlenmesi; kapatıp açınca konumun korunması | UX kabul ölçütlerinden biri ([AC-01 - AC-06](UX-DEFINITION-v1.0.md#8-kabul-ölçütleri-acceptance-criteria)) karşılanamazsa dur. |
+| **T05** | **UI Birleştirme, Durum Yönetimi & Konum Kalıcılığı** | `src/UsageGauge/ViewModels/*`, `src/UsageGauge/Views/*`, `src/UsageGauge/Services/ConfigService.*` | Timer, durum geçişi ve ayar kaydetme/yükleme testleri | Kullanım ekranları kapalıyken 2 kartta 4 kotanın (ChatGPT 5h/haftalık, Antigravity Gemini 5h/haftalık) izlenmesi; kapatıp açınca konumun korunması (T05 nihai kararıyla 3. kart arayüzden çıkarılmıştır) | UX kabul ölçütlerinden biri ([AC-01 - AC-06](UX-DEFINITION-v1.0.md#8-kabul-ölçütleri-acceptance-criteria)) karşılanamazsa dur. |
 
 ---
 

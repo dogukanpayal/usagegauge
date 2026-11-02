@@ -97,9 +97,37 @@ public static class NativeMethods
         uint dwEventThread,
         uint dwmsEventTime);
 
+    public delegate bool MonitorEnumProc(IntPtr hMonitor, IntPtr hdcMonitor, ref RECT lprcMonitor, IntPtr dwData);
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    public struct MONITORINFOEX
+    {
+        public int cbSize;
+        public RECT rcMonitor;
+        public RECT rcWork;
+        public uint dwFlags;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+        public string szDevice;
+    }
+
     #endregion
 
     #region P/Invoke Fonksiyonları
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr lprcClip, MonitorEnumProc lpfnEnum, IntPtr dwData);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFOEX lpmi);
+
+    [DllImport("shcore.dll")]
+    public static extern int GetDpiForMonitor(
+        IntPtr hMonitor,
+        int dpiType,
+        out uint dpiX,
+        out uint dpiY);
 
     [DllImport("kernel32.dll", SetLastError = false)]
     public static extern void SetLastError(int dwErrCode);

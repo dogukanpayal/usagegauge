@@ -12,7 +12,7 @@ UsageGauge; yazılım geliştiricilerin yapay zekâ model kullanım limitlerini 
 1. **Sıfır Ekran Açma Zorunluluğu:** Kullanıcının ChatGPT web ayarlarını veya Antigravity `Models & Usage` ekranını açık tutmasını gerektiren hiçbir görsel veya operasyonel akış tasarlanmaz. Veriler arka plan mekanizmaları (`codex app-server` ve `agy`) üzerinden doğrudan okunur.
 2. **Masaüstünde Rahatsız Etmeyen Varlık:** Widget **asla her zaman en üstte (`always-on-top`) durmaz**. Masaüstünde görünür kalır, normal uygulama pencerelerinin (IDE, tarayıcı, oyun) arkasında yer alır ve kendiliğinden sistem odağını çalmaz.
 3. **Veri Dürüstlüğü:** Gösterilen yüzdeler, sağlayıcıdan son başarılı veri çekim anındaki net değerdir. Yüzdeler hiçbir koşulda zaman geçtikçe tahmini veya varsayımsal olarak azaltılıp artırılamaz. Sıfırlanma geri sayım sayacı ise yerel saat üzerinden gerçek zamanlı akar.
-4. **Görsel Ayrım ve Çok Boyutlu Okunabilirlik:** Farklı kota mantıklarına sahip üç ana havuz birbirinden net kart sınırlarıyla ayrılır. Durum ve doluluklar yalnızca renklerle değil, açık metinler, sayısal değerler ve göstergelerle birlikte sunulur.
+4. **Görsel Ayrım ve Çok Boyutlu Okunabilirlik:** İki ana havuz (ChatGPT ve Antigravity Gemini) birbirinden net kart sınırlarıyla ayrılır. Durum ve doluluklar yalnızca renklerle değil, açık metinler, sayısal değerler ve göstergelerle birlikte sunulur. *(Not: T05 nihai kararıyla Antigravity Claude/GPT kartı ürün kapsamından çıkarılmış, widget 2 kart ve 4 kota olarak sadeleştirilmiştir).*
 
 ---
 
@@ -34,13 +34,15 @@ UsageGauge; yazılım geliştiricilerin yapay zekâ model kullanım limitlerini 
 
 ---
 
-## 3. Bilgi Hiyerarşisi ve Üç Grup Düzeni
+## 3. Bilgi Hiyerarşisi ve İki Grup Düzeni
 
-Widget; dikey bloklar halinde düzenlenmiş, birbirinden net kart sınırlarıyla ayrılan **3 Ana Grup** barındırır:
+Widget; dikey bloklar halinde düzenlenmiş, birbirinden net kart sınırlarıyla ayrılan **2 Ana Grup** barındırır:
+
+*(Ürün Kararı Notu: Başlangıç fizibilite ve T04 aşamasında Antigravity sağlayıcısından 3. bir grup olarak okunan Claude/GPT havuzu, T05 nihai ürün kararıyla widget arayüzünden çıkarılmıştır. Widget yalnızca ChatGPT Work/Codex ve Antigravity Gemini olmak üzere 2 kart ve 4 kota penceresi gösterir. CLI ve T04 sağlayıcı katmanındaki protokol desteği korunmuştur.)*
 
 ```
 +-------------------------------------------------------------+
-| UsageGauge [Son Kontrol: 17:05]                        [⟳] |
+| UsageGauge [Son: 17:05]                                [⟳] |
 +-------------------------------------------------------------+
 | [1] ChatGPT (Work/Codex)                                    |
 |  • 5 Saatlik : [████████████████████░░] %84   | 4s 27dk     |
@@ -49,10 +51,6 @@ Widget; dikey bloklar halinde düzenlenmiş, birbirinden net kart sınırlarıyl
 | [2] Antigravity (Gemini Modelleri)                          |
 |  • 5 Saatlik : [█████████████████████░] %96   | 4s 26dk     |
 |  • Haftalık  : [████████████████░░░░░░] %74   | 2g 23s      |
-+-------------------------------------------------------------+
-| [3] Antigravity (Claude ve GPT Modelleri)                   |
-|  • 5 Saatlik : [██████████████████████] %100  | 4s 59dk     |
-|  • Haftalık  : [██████████████████████] %100  | 6g 23s      |
 +-------------------------------------------------------------+
 ```
 
@@ -68,11 +66,7 @@ Widget; dikey bloklar halinde düzenlenmiş, birbirinden net kart sınırlarıyl
   1. *5 Saatlik Limit (`5h` penceresi):* Kalan yüzde (`%XX`) + yerel saate göre sıfırlanma sayacı.
   2. *Haftalık Limit (`weekly` penceresi):* Kalan yüzde (`%XX`) + yerel saate göre sıfırlanma sayacı.
 
-### 3.3 Grup 3: Antigravity (Claude ve GPT Modelleri)
-- **Kapsam:** Claude Opus, Claude Sonnet ve GPT-OSS modellerinin paylaştığı ortak kota havuzu.
-- **Alt Alanlar:**
-  1. *5 Saatlik Limit (`5h` penceresi):* Kalan yüzde (`%XX`) + yerel saate göre sıfırlanma sayacı.
-  2. *Haftalık Limit (`weekly` penceresi):* Kalan yüzde (`%XX`) + yerel saate göre sıfırlanma sayacı.
+*(Tarihsel Not: T00.8a ve T04'te doğrulanan Antigravity Claude ve GPT modelleri grubu, sağlayıcı seviyesinde okunabilir kalmaya devam etmekte ancak widget arayüzünde gösterilmemektedir.)*
 
 ---
 
@@ -81,7 +75,7 @@ Widget; dikey bloklar halinde düzenlenmiş, birbirinden net kart sınırlarıyl
 ### 4.1 Dar Yerleşimde Okunabilirlik
 - **Kompakt Ölçüler:** Widget yaklaşık 320–360 px genişliğinde kompakt bir panel olarak tasarlanır.
 - **Etiket ve Veri Ayrımı:**
-  - Grup başlıkları net ve kısa tutulur (`ChatGPT (Work/Codex)`, `Antigravity (Gemini)`, `Antigravity (Claude/GPT)`).
+  - Grup başlıkları net ve kısa tutulur (`ChatGPT (Work/Codex)`, `Antigravity (Gemini)`).
   - Her kota satırında dört temel bileşen yatay eksende hiyerarşik hizalanır:  
     `[Pencere Etiketi]` (örn. `5 Saatlik`) → `[İlerleme Çubuğu]` → `[Kalan Yüzde]` (örn. `%84`) → `[Kalan Süre]` (örn. `4s 26dk`).
 
@@ -141,12 +135,16 @@ Widget; dikey bloklar halinde düzenlenmiş, birbirinden net kart sınırlarıyl
 
 ## 8. Kabul Ölçütleri (Acceptance Criteria)
 
-- [ ] **AC-01 (Masaüstü Katmanı ve Odak):** Widget normal pencerelerin arkasında kalır; pencerelerin önüne fırlamaz ve kendiliğinden sistem odağını çalmaz.
-- [ ] **AC-02 (Çoklu Monitör ve Çalışma Alanı):** Widget ikinci monitöre taşınıp kapatıldığında, bir sonraki açılışta taşındığı monitörde açılır; çözünürlük veya ölçek değiştiğinde görünür çalışma alanında kalır.
-- [ ] **AC-03 (6 Kota Alanı):** 3 ana grupta toplam 6 kota penceresi (3 adet 5 saatlik, 3 adet haftalık) bağımsız olarak listelenir.
-- [ ] **AC-04 (Veri Dürüstlüğü ve Canlı Sayaç):** Son güncellemeden bu yana saatler geçse bile yüzde değeri yapay olarak değiştirilmez; sıfırlanma zamanına kalan geri sayım yerel saat üzerinden dinamik geriye sayar.
-- [ ] **AC-05 (Ekran Bağımsızlığı):** Kullanıcının ChatGPT web sekmesini veya Antigravity `Models & Usage` ekranını açık tutması gerekmez. Her iki servis için de kota verileri bu ekranlar kapalıyken arka plandaki araçlar üzerinden okunur ve gösterilir. *(Not: Antigravity masaüstü uygulamasının sistemde tamamen kapalı olması durumu bu aşamada garanti edilmez; doğrulanmış koşul Models & Usage ekranının kapalı olmasıdır).*
-- [ ] **AC-06 (Erişilebilir Okunabilirlik):** Kota dolulukları ve durumlar yalnızca renkle değil, sayısal değerler (`%XX`), kalın metinler ve açık etiketlerle sunulur.
+- [x] **AC-01 (Masaüstü Katmanı ve Odak):** Widget normal pencerelerin arkasında kalır; pencerelerin önüne fırlamaz ve kendiliğinden sistem odağını çalmaz.
+- [ ] **AC-02 (Çoklu Monitör ve Çalışma Alanı):** *(Kısmi / Doğrulanan ve Bekleyen Ayrıldı)*
+  - *Doğrulanan (Kullanıcı Tarafından Gerçek Cihazda):* Widget'ın iki monitör arasında serbestçe taşınması ve ikinci monitöre bırakılıp kapatıldıktan sonra yeniden açıldığında konumunu koruması kullanıcı tarafından Windows üzerinde başarıyla doğrulandı.
+  - *Bekleyen / Denenmemiş:* Çözünürlük veya DPI ölçek değişimi senaryoları henüz gerçek çok monitörlü cihazda denenmedi (yalnızca xUnit sınır denetim testleriyle simüle edildi).
+- [x] **AC-03 (4 Kota Alanı):** 2 ana grupta toplam 4 kota penceresi (2 adet 5 saatlik, 2 adet haftalık) bağımsız olarak listelenir. *(T05 nihai kararıyla 3. kart olan Claude/GPT arayüzden çıkarılmıştır; 2 kart/4 kota nihai kapsamdır).*
+- [ ] **AC-04 (Veri Dürüstlüğü ve Canlı Sayaç):** *(Kısmi / Doğrulanan ve Bekleyen Ayrıldı)*
+  - *Doğrulanan (Kod ve Test Kapsamında):* Yüzde değerinin sağlayıcı yanıtı dışında yapay olarak eksiltilmemesi/değiştirilmemesi ve sıfırlanma zamanına kalan sayacın yerel saat üzerinden dinamik geri sayması birim testleri ve kod incelemesiyle doğrulandı.
+  - *Bekleyen / Denenmemiş:* Saatler süren uzun süreli gerçek cihaz gözlemi yapılmadı.
+- [x] **AC-05 (Ekran Bağımsızlığı):** Kullanıcının ChatGPT web sekmesini veya Antigravity `Models & Usage` ekranını açık tutması gerekmez. Her iki servis için de kota verileri bu ekranlar kapalıyken arka plandaki araçlar üzerinden okunur ve gösterilir. *(Not: Antigravity masaüstü uygulamasının sistemde tamamen kapalı olması durumu bu aşamada garanti edilmez; doğrulanmış koşul Models & Usage ekranının kapalı olmasıdır).*
+- [x] **AC-06 (Erişilebilir Okunabilirlik):** Kota dolulukları ve durumlar yalnızca renkle değil, sayısal değerler (`%XX`), kalın metinler ve açık etiketlerle sunulur.
 
 ---
 
@@ -171,7 +169,7 @@ Widget; dikey bloklar halinde düzenlenmiş, birbirinden net kart sınırlarıyl
 ### Test 4: Kullanım Ekranları Kapalıyken Elle Yenileme
 1. Tarayıcıda ChatGPT web sekmesini ve Antigravity uygulamasındaki `Models & Usage` ekranını kapatın *(Antigravity masaüstü uygulaması normal çalışır durumda kalabilir)*.
 2. Widget üzerindeki `[⟳]` butonuna basın.
-3. **Beklenen Sonuç:** Yükleme göstergesi belirmeli, ardından hiçbir kullanım ekranı açılmadan 6 kotanın tamamı güncel değerleriyle listelenmelidir.
+3. **Beklenen Sonuç:** Yükleme göstergesi belirmeli, ardından hiçbir kullanım ekranı açılmadan 4 kotanın (ChatGPT 5h/haftalık, Antigravity Gemini 5h/haftalık) tamamı güncel değerleriyle listelenmelidir.
 
 ### Test 5: %100 Doluluk ve Erişilebilirlik Görünümü
 1. Kotalardan biri %100 iken kart görünümünü inceleyin.
