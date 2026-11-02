@@ -1,0 +1,8 @@
+<Application x:Class="UsageGauge.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <!-- T03 Spike Asgari Tema Kaynakları -->
+    </Application.Resources>
+</Application>
