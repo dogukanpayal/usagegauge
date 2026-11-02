@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "UsageGauge/1.0.0": {
+        "runtime": {
+          "UsageGauge.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "UsageGauge/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

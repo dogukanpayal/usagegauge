@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/UsageGauge/UsageGauge.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/UsageGauge.Tests/UsageGauge.Tests.csproj" />
+  </Folder>
+</Solution>
