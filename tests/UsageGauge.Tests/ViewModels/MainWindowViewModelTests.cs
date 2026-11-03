@@ -202,6 +202,77 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task StartInitialRefreshAsync_WhenAntigravityCliNotFound_ChatGptSucceeds_IsolatesErrorAndDisplaysAppropriateStatuses()
+    {
+        var chatGptStub = new StubChatGptProvider();
+        var agyStub = new StubAntigravityProviderWithResult(
+            AntigravityQuotaResult.CreateError(ProviderStatus.CliNotFound, "Antigravity CLI (agy.exe) bulunamadı."));
+
+        using var scheduler = new QuotaScheduler(chatGptStub, agyStub);
+        using var viewModel = new MainWindowViewModel(scheduler);
+
+        await viewModel.StartInitialRefreshAsync();
+
+        // ChatGPT kartı başarılı ve güncel olmalı
+        Assert.False(viewModel.ChatGptCard.IsLoading);
+        Assert.Equal("✓ Güncel", viewModel.ChatGptCard.StatusText);
+        Assert.Equal(85.0, viewModel.ChatGptCard.FiveHourWindow.RemainingPercent);
+        Assert.Equal(70.0, viewModel.ChatGptCard.WeeklyWindow.RemainingPercent);
+
+        // Gemini kartı CliNotFound rozeti göstermeli
+        Assert.False(viewModel.GeminiCard.IsLoading);
+        Assert.Equal("✕ CLI Bulunamadı", viewModel.GeminiCard.StatusText);
+        Assert.Equal("Antigravity CLI (agy.exe) bulunamadı.", viewModel.GeminiCard.ErrorMessage);
+        Assert.Equal("--%", viewModel.GeminiCard.FiveHourWindow.RemainingPercentText);
+        Assert.Equal("--%", viewModel.GeminiCard.WeeklyWindow.RemainingPercentText);
+    }
+
+    [Fact]
+    public async Task StartInitialRefreshAsync_WhenAntigravityReturnsMalformedResponse_ChatGptSucceeds_AndDisplaysAppropriateStatus()
+    {
+        var chatGptStub = new StubChatGptProvider();
+        var agyStub = new StubAntigravityProviderWithResult(
+            AntigravityQuotaResult.CreateError(ProviderStatus.InvalidResponse, "Antigravity JSON ayrıştırma hatası."));
+
+        using var scheduler = new QuotaScheduler(chatGptStub, agyStub);
+        using var viewModel = new MainWindowViewModel(scheduler);
+
+        await viewModel.StartInitialRefreshAsync();
+
+        // ChatGPT kartı bağımsız olarak güncel olmalı
+        Assert.False(viewModel.ChatGptCard.IsLoading);
+        Assert.Equal("✓ Güncel", viewModel.ChatGptCard.StatusText);
+
+        // Gemini kartı InvalidResponse için Okuma Hatası göstermeli
+        Assert.False(viewModel.GeminiCard.IsLoading);
+        Assert.Equal("⚠ Okuma Hatası", viewModel.GeminiCard.StatusText);
+        Assert.Equal("Antigravity JSON ayrıştırma hatası.", viewModel.GeminiCard.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task StartInitialRefreshAsync_WhenBothRequireAuthentication_DisplaysSessionRequiredOnBothCards()
+    {
+        var chatGptStub = new StubChatGptProviderWithResult(
+            ChatGptQuotaResult.CreateError(ProviderStatus.AuthenticationRequired, "Codex oturumu açık değil."));
+        var agyStub = new StubAntigravityProviderWithResult(
+            AntigravityQuotaResult.CreateError(ProviderStatus.AuthenticationRequired, "Antigravity oturumu açık değil."));
+
+        using var scheduler = new QuotaScheduler(chatGptStub, agyStub);
+        using var viewModel = new MainWindowViewModel(scheduler);
+
+        await viewModel.StartInitialRefreshAsync();
+
+        // Her iki kart da bağımsız olarak Oturum Gerekli rozeti göstermeli
+        Assert.False(viewModel.ChatGptCard.IsLoading);
+        Assert.Equal("🔑 Oturum Gerekli", viewModel.ChatGptCard.StatusText);
+        Assert.Equal("Codex oturumu açık değil.", viewModel.ChatGptCard.ErrorMessage);
+
+        Assert.False(viewModel.GeminiCard.IsLoading);
+        Assert.Equal("🔑 Oturum Gerekli", viewModel.GeminiCard.StatusText);
+        Assert.Equal("Antigravity oturumu açık değil.", viewModel.GeminiCard.ErrorMessage);
+    }
+
+    [Fact]
     public async Task TriggerManualRefreshAsync_WhenOneProviderThrowsUnexpectedException_OtherCardUpdatesNormally()
     {
         var throwingChatGpt = new StubChatGptThrowing();
