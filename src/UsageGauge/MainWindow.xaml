@@ -169,7 +169,8 @@
                                 VerticalAlignment="Center"
                                 Background="{Binding StatusBadgeBackground}"
                                 CornerRadius="4"
-                                Padding="5,2">
+                                Padding="5,2"
+                                ToolTip="{Binding ErrorMessage}">
                             <TextBlock Text="{Binding StatusText}"
                                        Foreground="{Binding StatusBrush}"
                                        FontWeight="Medium"
@@ -261,7 +262,8 @@
                                 VerticalAlignment="Center"
                                 Background="{Binding StatusBadgeBackground}"
                                 CornerRadius="4"
-                                Padding="5,2">
+                                Padding="5,2"
+                                ToolTip="{Binding ErrorMessage}">
                             <TextBlock Text="{Binding StatusText}"
                                        Foreground="{Binding StatusBrush}"
                                        FontWeight="Medium"

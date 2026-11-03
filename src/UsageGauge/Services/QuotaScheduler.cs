@@ -196,6 +196,24 @@ public sealed class QuotaScheduler : IDisposable
         {
             return _lastChatGptResult ?? ChatGptQuotaResult.CreateError(ProviderStatus.Timeout, "Uygulama kapatıldı.");
         }
+        catch (Exception)
+        {
+            _chatGptConsecutiveErrors++;
+            _nextChatGptRefreshUtc = _utcNow() + GetBackoffInterval(_chatGptConsecutiveErrors);
+            var errResult = ChatGptQuotaResult.CreateError(
+                ProviderStatus.ProcessError,
+                "ChatGPT kota sorgusu sırasında beklenmeyen bir hata oluştu.");
+
+            if (_lastChatGptResult != null && _lastChatGptResult.CodexGroup.HasUsableData)
+            {
+                var staleGroup = _lastChatGptResult.CodexGroup.ToStale(errResult.Status, errResult.ErrorMessage);
+                errResult = new ChatGptQuotaResult(staleGroup, errResult.Status, errResult.ErrorMessage, errResult.FetchedAtUtc);
+            }
+
+            _lastChatGptResult = errResult;
+            ChatGptUpdated?.Invoke(errResult);
+            return errResult;
+        }
         finally
         {
             linkedCts.Dispose();
@@ -325,6 +343,38 @@ public sealed class QuotaScheduler : IDisposable
         catch (OperationCanceledException) when (_disposeCts.IsCancellationRequested || _isDisposed)
         {
             return _lastAntigravityResult ?? AntigravityQuotaResult.CreateError(ProviderStatus.Timeout, "Uygulama kapatıldı.");
+        }
+        catch (Exception)
+        {
+            _antigravityConsecutiveErrors++;
+            _nextAntigravityRefreshUtc = _utcNow() + GetBackoffInterval(_antigravityConsecutiveErrors);
+            var errResult = AntigravityQuotaResult.CreateError(
+                ProviderStatus.ProcessError,
+                "Antigravity kota sorgusu sırasında beklenmeyen bir hata oluştu.");
+
+            if (_lastAntigravityResult != null)
+            {
+                QuotaGroup gemini = _lastAntigravityResult.GeminiGroup.HasUsableData
+                    ? _lastAntigravityResult.GeminiGroup.ToStale(errResult.Status, errResult.ErrorMessage)
+                    : _lastAntigravityResult.GeminiGroup;
+
+                QuotaGroup tp = _lastAntigravityResult.ThirdPartyGroup.HasUsableData
+                    ? _lastAntigravityResult.ThirdPartyGroup.ToStale(errResult.Status, errResult.ErrorMessage)
+                    : _lastAntigravityResult.ThirdPartyGroup;
+
+                errResult = new AntigravityQuotaResult(
+                    gemini,
+                    tp,
+                    errResult.Status,
+                    0,
+                    0,
+                    errResult.ErrorMessage,
+                    errResult.FetchedAtUtc);
+            }
+
+            _lastAntigravityResult = errResult;
+            AntigravityUpdated?.Invoke(errResult);
+            return errResult;
         }
         finally
         {

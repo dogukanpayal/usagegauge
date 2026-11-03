@@ -1,0 +1,6 @@
+# Derleme çıktıları
+bin/
+obj/
+
+# Yayın ve dağıtım çıktıları
+dist/

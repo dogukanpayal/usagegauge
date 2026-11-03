@@ -437,4 +437,133 @@ public class QuotaSchedulerTests
         await tcsFinished.Task.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.True(tcsFinished.Task.IsCompletedSuccessfully);
     }
+
+    [Fact]
+    public async Task RefreshAllAsync_WhenChatGptThrowsException_AntigravitySucceeds_IsolatesFaultAndBothCardsUpdated()
+    {
+        var throwingChat = new StubChatGptProvider(() => throw new InvalidOperationException("ChatGPT patlama testi"));
+        var successfulAgy = new StubAntigravityProvider(() => Task.FromResult(CreateValidAntigravityResult()));
+
+        using var scheduler = new QuotaScheduler(throwingChat, successfulAgy);
+
+        ChatGptQuotaResult? chatResult = null;
+        AntigravityQuotaResult? agyResult = null;
+
+        scheduler.ChatGptUpdated += res => chatResult = res;
+        scheduler.AntigravityUpdated += res => agyResult = res;
+
+        // RefreshAllAsync istisna fırlatmadan tamamlanmalı
+        await scheduler.RefreshAllAsync();
+
+        Assert.NotNull(chatResult);
+        Assert.Equal(ProviderStatus.ProcessError, chatResult.Status);
+        Assert.Equal("ChatGPT kota sorgusu sırasında beklenmeyen bir hata oluştu.", chatResult.ErrorMessage);
+        Assert.DoesNotContain("patlama testi", chatResult.ErrorMessage);
+
+        Assert.NotNull(agyResult);
+        Assert.True(agyResult.IsSuccess);
+        Assert.Equal(ProviderStatus.Success, agyResult.Status);
+        Assert.False(scheduler.IsAnyRefreshing);
+    }
+
+    [Fact]
+    public async Task RefreshAllAsync_WhenAntigravityThrowsException_ChatGptSucceeds_IsolatesFaultAndBothCardsUpdated()
+    {
+        var successfulChat = new StubChatGptProvider(() => Task.FromResult(CreateValidChatGptResult()));
+        var throwingAgy = new StubAntigravityProvider(() => throw new InvalidOperationException("Antigravity patlama testi"));
+
+        using var scheduler = new QuotaScheduler(successfulChat, throwingAgy);
+
+        ChatGptQuotaResult? chatResult = null;
+        AntigravityQuotaResult? agyResult = null;
+
+        scheduler.ChatGptUpdated += res => chatResult = res;
+        scheduler.AntigravityUpdated += res => agyResult = res;
+
+        await scheduler.RefreshAllAsync();
+
+        Assert.NotNull(chatResult);
+        Assert.True(chatResult.IsSuccess);
+        Assert.Equal(ProviderStatus.Success, chatResult.Status);
+
+        Assert.NotNull(agyResult);
+        Assert.Equal(ProviderStatus.ProcessError, agyResult.Status);
+        Assert.Equal("Antigravity kota sorgusu sırasında beklenmeyen bir hata oluştu.", agyResult.ErrorMessage);
+        Assert.DoesNotContain("patlama testi", agyResult.ErrorMessage);
+        Assert.False(scheduler.IsAnyRefreshing);
+    }
+
+    [Fact]
+    public async Task RefreshChatGptAsync_WhenExceptionContainsSensitiveEmailAndToken_SanitizesMessageAndPreservesStaleDataWithoutLeaks()
+    {
+        int callCount = 0;
+        var stub = new StubChatGptProvider(() =>
+        {
+            callCount++;
+            if (callCount == 1) return Task.FromResult(CreateValidChatGptResult(80.0, 60.0));
+            throw new InvalidOperationException("Crash for user secret_user@internal.corp with token Bearer-xyz987654321");
+        });
+
+        using var scheduler = new QuotaScheduler(stub, new StubAntigravityProvider(() => Task.FromResult(CreateValidAntigravityResult())));
+
+        // 1. İlk başarılı çağrı
+        var firstResult = await scheduler.RefreshChatGptAsync();
+        Assert.True(firstResult.IsSuccess);
+
+        // 2. Hassas veri içeren istisna fırlatan 2. çağrı
+        var failedResult = await scheduler.RefreshChatGptAsync();
+
+        Assert.False(failedResult.IsSuccess);
+        Assert.Equal(ProviderStatus.ProcessError, failedResult.Status);
+
+        // Hassas metinlerin sızmadığını doğrula
+        Assert.Equal("ChatGPT kota sorgusu sırasında beklenmeyen bir hata oluştu.", failedResult.ErrorMessage);
+        Assert.DoesNotContain("secret_user@internal.corp", failedResult.ErrorMessage);
+        Assert.DoesNotContain("Bearer-xyz987654321", failedResult.ErrorMessage);
+
+        // Stale veri grubunun da sızıntı içermediğini doğrula
+        Assert.True(failedResult.CodexGroup.IsStale);
+        Assert.Equal("ChatGPT kota sorgusu sırasında beklenmeyen bir hata oluştu.", failedResult.CodexGroup.ErrorMessage);
+        Assert.DoesNotContain("secret_user@internal.corp", failedResult.CodexGroup.ErrorMessage);
+        Assert.DoesNotContain("Bearer-xyz987654321", failedResult.CodexGroup.ErrorMessage);
+
+        // Geri çekilme takviminin çalıştığını doğrula (1 hata -> 10 dk)
+        Assert.Equal(1, scheduler.ChatGptConsecutiveErrors);
+        Assert.True(scheduler.NextChatGptRefreshUtc > DateTimeOffset.UtcNow);
+    }
+
+    [Fact]
+    public async Task RefreshAntigravityAsync_WhenExceptionContainsSensitiveEmailAndToken_SanitizesMessageAndPreservesStaleDataWithoutLeaks()
+    {
+        int callCount = 0;
+        var stub = new StubAntigravityProvider(() =>
+        {
+            callCount++;
+            if (callCount == 1) return Task.FromResult(CreateValidAntigravityResult());
+            throw new InvalidOperationException("Token leak test: admin@gemini-corp.internal & key_abc123456789");
+        });
+
+        using var scheduler = new QuotaScheduler(new StubChatGptProvider(() => Task.FromResult(CreateValidChatGptResult())), stub);
+
+        var firstResult = await scheduler.RefreshAntigravityAsync();
+        Assert.True(firstResult.IsSuccess);
+
+        var failedResult = await scheduler.RefreshAntigravityAsync();
+
+        Assert.False(failedResult.IsSuccess);
+        Assert.Equal(ProviderStatus.ProcessError, failedResult.Status);
+
+        Assert.Equal("Antigravity kota sorgusu sırasında beklenmeyen bir hata oluştu.", failedResult.ErrorMessage);
+        Assert.DoesNotContain("admin@gemini-corp.internal", failedResult.ErrorMessage);
+        Assert.DoesNotContain("key_abc123456789", failedResult.ErrorMessage);
+
+        // Stale gruplarda da sızıntı olmadığını doğrula
+        Assert.True(failedResult.GeminiGroup.IsStale);
+        Assert.Equal("Antigravity kota sorgusu sırasında beklenmeyen bir hata oluştu.", failedResult.GeminiGroup.ErrorMessage);
+        Assert.DoesNotContain("admin@gemini-corp.internal", failedResult.GeminiGroup.ErrorMessage);
+        Assert.DoesNotContain("key_abc123456789", failedResult.GeminiGroup.ErrorMessage);
+
+        Assert.Equal(1, scheduler.AntigravityConsecutiveErrors);
+        Assert.True(scheduler.NextAntigravityRefreshUtc > DateTimeOffset.UtcNow);
+    }
 }
