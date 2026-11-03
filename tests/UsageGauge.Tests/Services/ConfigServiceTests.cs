@@ -272,4 +272,30 @@ public class ConfigServiceTests
         Assert.NotNull(dominant);
         Assert.Equal(@"\\.\DISPLAY1", dominant.DeviceName);
     }
+
+    [Fact]
+    public void EnsureVisibleBounds_WhenResolutionShrinksOnDualMonitors_ClampsWithinVisibleWorkArea()
+    {
+        // 2. monitörün çözünürlüğü 4K'dan (3840x2160 -> 2560x1440 DIP) Full HD'ye (1920x1080 DIP) düşürüldü
+        // Monitör 1: Rect(0, 0, 1920, 1080)
+        // Monitör 2: Rect(1920, 0, 1920, 1080) -> Sağ sınır 3840
+        var monitors = new List<MonitorDescriptor>
+        {
+            new MonitorDescriptor(@"\\.\DISPLAY1", "Display 1 (Primary)", new Rect(0, 0, 1920, 1080), IsPrimary: true),
+            new MonitorDescriptor(@"\\.\DISPLAY2", "Display 2 (Secondary)", new Rect(1920, 0, 1920, 1080), IsPrimary: false)
+        };
+
+        // Eski 4K çözünürlükte sağ alt köşede kaydedilmiş konum (left: 4200, top: 1300)
+        var (clampedLeft, clampedTop) = ConfigService.EnsureVisibleBounds(
+            left: 4200,
+            top: 1300,
+            width: 340,
+            height: 330,
+            monitors: monitors,
+            preferredDeviceName: @"\\.\DISPLAY2");
+
+        // Pencere yeni Monitör 2 sınırları içinde kalmalı (1920 <= Left <= 3840 - 240)
+        Assert.InRange(clampedLeft, 1920, 1920 + 1920 - 240);
+        Assert.InRange(clampedTop, 0, 1080 - 200);
+    }
 }

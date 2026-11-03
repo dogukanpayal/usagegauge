@@ -55,6 +55,7 @@ public sealed class QuotaScheduler : IDisposable
     public DateTimeOffset NextChatGptRefreshUtc => _nextChatGptRefreshUtc;
     public DateTimeOffset NextAntigravityRefreshUtc => _nextAntigravityRefreshUtc;
     public DateTimeOffset? LastSuccessfulCheckUtc { get; private set; }
+    public Func<DateTimeOffset> UtcNow => _utcNow;
 
     public event Action<ChatGptQuotaResult>? ChatGptUpdated;
     public event Action<AntigravityQuotaResult>? AntigravityUpdated;

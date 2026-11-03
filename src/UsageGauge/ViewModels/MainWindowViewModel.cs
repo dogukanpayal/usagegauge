@@ -9,6 +9,7 @@ namespace UsageGauge.ViewModels;
 public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly QuotaScheduler _scheduler;
+    private readonly Func<DateTimeOffset> _utcNow;
     private string _lastCheckedText = "Son: --:--";
     private bool _isAnyRefreshing;
     private bool _isDisposed;
@@ -30,9 +31,10 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
     public QuotaScheduler Scheduler => _scheduler;
 
-    public MainWindowViewModel(QuotaScheduler? scheduler = null)
+    public MainWindowViewModel(QuotaScheduler? scheduler = null, Func<DateTimeOffset>? utcNow = null)
     {
         _scheduler = scheduler ?? new QuotaScheduler();
+        _utcNow = utcNow ?? _scheduler.UtcNow;
 
         ChatGptCard = new QuotaCardViewModel("chatgpt-codex", "ChatGPT (Work/Codex)");
         GeminiCard = new QuotaCardViewModel("antigravity-gemini", "Antigravity (Gemini)");
@@ -70,14 +72,14 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
     private void OnChatGptUpdated(ChatGptQuotaResult result)
     {
-        DateTimeOffset now = DateTimeOffset.UtcNow;
+        DateTimeOffset now = _utcNow();
         ChatGptCard.UpdateFromGroup(result.CodexGroup, now);
         UpdateLastCheckedDisplay();
     }
 
     private void OnAntigravityUpdated(AntigravityQuotaResult result)
     {
-        DateTimeOffset now = DateTimeOffset.UtcNow;
+        DateTimeOffset now = _utcNow();
         GeminiCard.UpdateFromGroup(result.GeminiGroup, now);
         UpdateLastCheckedDisplay();
     }

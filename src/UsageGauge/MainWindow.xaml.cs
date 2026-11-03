@@ -63,6 +63,7 @@ public partial class MainWindow : Window
     {
         // 1. DesktopWindowManager başlat (WispDock dinamik Z-order mimarisi)
         _windowManager.Initialize();
+        _windowManager.DisplaySettingsChanged += MainWindow_DisplaySettingsChanged;
 
         // 2. Kaydedilen yapılandırmayı yükle ve ekran sınırlarını doğrula (SourceInitialized aşamasında dosyaya yazılmaz)
         LoadAndApplyConfig(saveIfNewOrAdjusted: false);
@@ -87,9 +88,18 @@ public partial class MainWindow : Window
     private void MainWindow_Closed(object? sender, EventArgs e)
     {
         _clockTimer.Stop();
+        _windowManager.DisplaySettingsChanged -= MainWindow_DisplaySettingsChanged;
         // SaveCurrentState() Closing olayında bir kez çalıştırıldığı için burada mükerrer kayıt yapılmaz
         _viewModel.Dispose();
         _windowManager.Dispose();
+    }
+
+    private void MainWindow_DisplaySettingsChanged()
+    {
+        // Çoklu monitör, çözünürlük veya DPI değiştiğinde sağ tık menüsünü ve konum sınırlarını güncelle
+        PopulateMonitorMenu();
+        LoadAndApplyConfig(saveIfNewOrAdjusted: true);
+        _windowManager.UpdateZOrder();
     }
 
     private void ClockTimer_Tick(object? sender, EventArgs e)
@@ -302,7 +312,21 @@ public partial class MainWindow : Window
         if (monitors.Count > 0)
         {
             MonitorDescriptor primary = monitors.FirstOrDefault(m => m.IsPrimary) ?? monitors[0];
-            MoveToMonitor(primary);
+            double width = ActualWidth > 0 ? ActualWidth : (Width > 0 ? Width : 340);
+            double height = ActualHeight > 0 ? ActualHeight : (Height > 0 ? Height : 460);
+
+            // Birincil ekranın sağ alt güvenli çalışma alanına konumlandır
+            double safeLeft = primary.WorkAreaDip.Right - width - 24;
+            double safeTop = primary.WorkAreaDip.Bottom - height - 48;
+
+            if (safeLeft < primary.WorkAreaDip.Left) safeLeft = primary.WorkAreaDip.Left + 20;
+            if (safeTop < primary.WorkAreaDip.Top) safeTop = primary.WorkAreaDip.Top + 20;
+
+            Left = safeLeft;
+            Top = safeTop;
+
+            _windowManager.UpdateZOrder();
+            SaveCurrentState();
         }
         else
         {

@@ -55,7 +55,9 @@ public static class NativeMethods
     public const int WM_MOUSEACTIVATE = 0x0021;
     public const int WM_WINDOWPOSCHANGING = 0x0046;
     public const int WM_WINDOWPOSCHANGED = 0x0047;
+    public const int WM_DISPLAYCHANGE = 0x007E;
     public const int WM_SYSCOMMAND = 0x0112;
+    public const int WM_DPICHANGED = 0x02E0;
 
     public const int SC_MINIMIZE = 0xF020;
     public const int SIZE_RESTORED = 0;

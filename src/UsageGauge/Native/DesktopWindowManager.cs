@@ -37,6 +37,7 @@ public sealed class DesktopWindowManager : IDisposable
     public bool IsDesktopActive => _isDesktopActive;
 
     public event Action<string>? StatusChanged;
+    public event Action? DisplaySettingsChanged;
 
     public DesktopWindowManager(Window window, Dispatcher? dispatcher = null)
     {
@@ -430,6 +431,13 @@ public sealed class DesktopWindowManager : IDisposable
 
             case NativeMethods.WM_SIZE when wParam.ToInt32() == NativeMethods.SIZE_RESTORED:
                 DesktopDiagnostics.LogSnapshot(hwnd, "WM_SIZE(SIZE_RESTORED)");
+                break;
+
+            // Ekran çözünürlüğü, DPI veya monitör yapılandırması değiştiğinde
+            case NativeMethods.WM_DISPLAYCHANGE:
+            case NativeMethods.WM_DPICHANGED:
+                DesktopDiagnostics.LogSnapshot(hwnd, $"DisplayChanged(msg=0x{msg:X4})");
+                _dispatcher.BeginInvoke(new Action(() => DisplaySettingsChanged?.Invoke()));
                 break;
         }
 
