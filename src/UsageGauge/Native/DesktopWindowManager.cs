@@ -30,11 +30,102 @@ public sealed class DesktopWindowManager : IDisposable
     private bool _hasPendingDesktopVerify;
     private bool _isDesktopActive;
     private bool _wasDesktopLastUpdate;
+    private bool _isAlwaysOnTop;
     private int _zeroFgRetryCount;
     private const int MaxZeroFgRetries = 4; // Toplam en fazla 200 ms (4 * 50ms)
 
+    public delegate bool SetWindowPosDelegate(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint flags);
+    public delegate IntPtr GetForegroundWindowDelegate();
+
+    private SetWindowPosDelegate _setWindowPosFunc = NativeMethods.SetWindowPos;
+    private GetForegroundWindowDelegate _getForegroundWindowFunc = NativeMethods.GetForegroundWindow;
+
+    public SetWindowPosDelegate SetWindowPosFunc
+    {
+        get => _setWindowPosFunc;
+        internal set => _setWindowPosFunc = value;
+    }
+
+    public GetForegroundWindowDelegate GetForegroundWindowFunc
+    {
+        get => _getForegroundWindowFunc;
+        internal set => _getForegroundWindowFunc = value;
+    }
+
+    internal void SetHandleForTesting(IntPtr handle) => _hwnd = handle;
+
     public IntPtr Handle => _hwnd;
     public bool IsDesktopActive => _isDesktopActive;
+    public bool IsExplicitlyHidden { get; set; }
+
+    public bool IsAlwaysOnTop
+    {
+        get => _isAlwaysOnTop;
+        set => SetAlwaysOnTop(value);
+    }
+
+    /// <summary>
+    /// Her Zaman Üstte durumunu ayarlar.
+    /// Kapatıldığında HWND_NOTOPMOST işlemini hemen ve hata sonucunu denetleyerek uygular.
+    /// GetForegroundWindow() == widget HWND olsa bile üst katmandan çıkış derhal gerçekleşir.
+    /// Başarısız olursa false döner ve durum güncellenmez.
+    /// </summary>
+    public bool SetAlwaysOnTop(bool value)
+    {
+        if (_hwnd == IntPtr.Zero || _isDisposed)
+        {
+            _isAlwaysOnTop = value;
+            return true;
+        }
+
+        if (value)
+        {
+            if (!IsExplicitlyHidden)
+            {
+                NativeMethods.SetLastError(0);
+                bool success = SetWindowPosFunc(
+                    _hwnd,
+                    NativeMethods.HWND_TOPMOST,
+                    0, 0, 0, 0,
+                    NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_SHOWWINDOW
+                );
+                int err = Marshal.GetLastWin32Error();
+                if (!success)
+                {
+                    StatusChanged?.Invoke($"Hata: HWND_TOPMOST ayarlanamadı (Win32 Kodu: {err}).");
+                    return false;
+                }
+            }
+            _isAlwaysOnTop = true;
+            StatusChanged?.Invoke("Her Zaman Üstte aktif: HWND_TOPMOST (Pencerelerin üzerinde ✓)");
+            return true;
+        }
+        else
+        {
+            // IsAlwaysOnTop kapatıldığında HWND_NOTOPMOST işlemini hemen ve hata sonucunu denetleyerek uygula.
+            NativeMethods.SetLastError(0);
+            bool success = SetWindowPosFunc(
+                _hwnd,
+                NativeMethods.HWND_NOTOPMOST,
+                0, 0, 0, 0,
+                NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE
+            );
+            int err = Marshal.GetLastWin32Error();
+            if (!success)
+            {
+                StatusChanged?.Invoke($"Hata: HWND_NOTOPMOST uygulanamadı (Win32 Kodu: {err}).");
+                return false;
+            }
+
+            _isAlwaysOnTop = false;
+
+            // Ardından mevcut dinamik Z-order davranışına dön.
+            // GetForegroundWindow() == widget HWND olsa bile üst katmandan çıkış derhal SetWindowPos(HWND_NOTOPMOST) ile gerçekleşmiştir.
+            UpdateZOrder(isVerification: false);
+            StatusChanged?.Invoke("Her Zaman Üstte kapatıldı: HWND_NOTOPMOST katmanına dönüldü.");
+            return true;
+        }
+    }
 
     public event Action<string>? StatusChanged;
     public event Action? DisplaySettingsChanged;
@@ -203,7 +294,31 @@ public sealed class DesktopWindowManager : IDisposable
     {
         if (_isDisposed || _hwnd == IntPtr.Zero) return;
 
-        IntPtr currentFgHwnd = NativeMethods.GetForegroundWindow();
+        // Kullanıcı pencereyi açıkça bildirim alanına gizlediyse Z-Order ve ShowWindow tetiklenmez
+        if (IsExplicitlyHidden) return;
+
+        // Her Zaman Üstte seçeneği aktifse: Normal pencerelerin üzerinde kalmalı, ön plan değişimleri tercihi geri almamalı
+        if (_isAlwaysOnTop)
+        {
+            bool wasIconicOnTop = NativeMethods.IsIconic(_hwnd);
+            bool wasVisibleOnTop = NativeMethods.IsWindowVisible(_hwnd);
+            if (wasIconicOnTop || !wasVisibleOnTop)
+            {
+                NativeMethods.ShowWindow(_hwnd, NativeMethods.SW_SHOWNOACTIVATE);
+            }
+
+            NativeMethods.SetLastError(0);
+            SetWindowPosFunc(
+                _hwnd,
+                NativeMethods.HWND_TOPMOST,
+                0, 0, 0, 0,
+                NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_SHOWWINDOW
+            );
+            StatusChanged?.Invoke("Her Zaman Üstte aktif: HWND_TOPMOST (Pencerelerin üzerinde ✓)");
+            return;
+        }
+
+        IntPtr currentFgHwnd = GetForegroundWindowFunc();
 
         if (currentFgHwnd == IntPtr.Zero)
         {
@@ -246,7 +361,7 @@ public sealed class DesktopWindowManager : IDisposable
 
             // 2. Masaüstü üzerinde görünür ve tıklanabilir kalması için Topmost katmanına al (odağı çalmadan)
             NativeMethods.SetLastError(0);
-            bool topRes = NativeMethods.SetWindowPos(
+            bool topRes = SetWindowPosFunc(
                 _hwnd,
                 NativeMethods.HWND_TOPMOST,
                 0, 0, 0, 0,
@@ -281,7 +396,7 @@ public sealed class DesktopWindowManager : IDisposable
 
             // 1. Topmost'tan çıkar
             NativeMethods.SetLastError(0);
-            bool notopRes = NativeMethods.SetWindowPos(
+            bool notopRes = SetWindowPosFunc(
                 _hwnd,
                 NativeMethods.HWND_NOTOPMOST,
                 0, 0, 0, 0,
@@ -297,7 +412,7 @@ public sealed class DesktopWindowManager : IDisposable
 
             // 2. Aktif uygulamanın hemen arkasına yerleştir
             NativeMethods.SetLastError(0);
-            bool behindRes = NativeMethods.SetWindowPos(
+            bool behindRes = SetWindowPosFunc(
                 _hwnd,
                 currentFgHwnd,
                 0, 0, 0, 0,
@@ -442,6 +557,51 @@ public sealed class DesktopWindowManager : IDisposable
         }
 
         return IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Kullanıcı açıkça bildirim alanına gizlediğinde çağrılır.
+    /// </summary>
+    public void HideToTray()
+    {
+        IsExplicitlyHidden = true;
+        if (_hwnd != IntPtr.Zero)
+        {
+            NativeMethods.ShowWindow(_hwnd, NativeMethods.SW_HIDE);
+        }
+    }
+
+    /// <summary>
+    /// Bildirim alanından veya kısayoldan "Göster" tetiklendiğinde çağrılır.
+    /// Pencereyi görünür yapar, Z-Order'ı eşitler ve geçici olarak öne alır (kalıcı topmost yapmaz).
+    /// </summary>
+    public void ShowFromTray()
+    {
+        IsExplicitlyHidden = false;
+        if (_hwnd != IntPtr.Zero)
+        {
+            NativeMethods.ShowWindow(_hwnd, NativeMethods.SW_SHOWNOACTIVATE);
+            if (_isAlwaysOnTop)
+            {
+                NativeMethods.SetLastError(0);
+                SetWindowPosFunc(
+                    _hwnd,
+                    NativeMethods.HWND_TOPMOST,
+                    0, 0, 0, 0,
+                    NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_SHOWWINDOW
+                );
+            }
+            else
+            {
+                UpdateZOrder(isVerification: false);
+                SetWindowPosFunc(
+                    _hwnd,
+                    NativeMethods.HWND_TOP,
+                    0, 0, 0, 0,
+                    NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_SHOWWINDOW
+                );
+            }
+        }
     }
 
     public void Dispose()

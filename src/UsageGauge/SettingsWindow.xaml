@@ -1,0 +1,176 @@
+<Window x:Class="UsageGauge.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="UsageGauge Ayarları"
+        Width="330"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False">
+
+    <Window.Resources>
+        <!-- Başlık Butonu Şablonu -->
+        <Style x:Key="SettingsHeaderButtonStyle" TargetType="Button">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1E293B"/>
+                                <Setter Property="Foreground" Value="#F8FAFC"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Standart İşlem Butonu Şablonu -->
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Foreground" Value="#F1F5F9"/>
+            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#334155"/>
+                                <Setter Property="BorderBrush" Value="#475569"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#0F172A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="#0F172A"
+            BorderBrush="#334155"
+            BorderThickness="1"
+            CornerRadius="8"
+            SnapsToDevicePixels="True">
+        <Grid Margin="12,10,12,12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- Başlık Çubuğu -->
+                <RowDefinition Height="Auto"/> <!-- Ayarlar İçeriği -->
+                <RowDefinition Height="Auto"/> <!-- Kapat Butonu -->
+            </Grid.RowDefinitions>
+
+            <!-- Başlık Çubuğu -->
+            <Grid Grid.Row="0" Margin="0,0,0,10" MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="⚙" Foreground="#38BDF8" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="UsageGauge Ayarları" Foreground="#F8FAFC" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Style="{StaticResource SettingsHeaderButtonStyle}"
+                        ToolTip="Kapat"
+                        Click="BtnClose_Click">
+                    <TextBlock Text="✕" FontSize="10"/>
+                </Button>
+            </Grid>
+
+            <!-- Ayarlar İçeriği -->
+            <StackPanel Grid.Row="1">
+                <!-- 1. Görünüm Düzeni -->
+                <TextBlock Text="Görünüm Düzeni" Foreground="#38BDF8" FontWeight="SemiBold" FontSize="11" Margin="0,0,0,4"/>
+                <Border Background="#1E293B" BorderBrush="#334155" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="0,0,0,10">
+                    <StackPanel>
+                        <RadioButton x:Name="RadioNormal" GroupName="ViewModeGroup" Content="Normal (340 px, tam detay)" Foreground="#E2E8F0" FontSize="10.5" Margin="0,1,0,3" Click="RadioViewMode_Click"/>
+                        <RadioButton x:Name="RadioMedium" GroupName="ViewModeGroup" Content="Orta (270 px, dikey kompakt)" Foreground="#E2E8F0" FontSize="10.5" Margin="0,2,0,3" Click="RadioViewMode_Click"/>
+                        <RadioButton x:Name="RadioMediumMini" GroupName="ViewModeGroup" Content="Orta-Mini (200 px, 2x2 matris)" Foreground="#E2E8F0" FontSize="10.5" Margin="0,2,0,3" Click="RadioViewMode_Click"/>
+                        <RadioButton x:Name="RadioMini" GroupName="ViewModeGroup" Content="Mini (Yatay kompakt, 420 px)" Foreground="#E2E8F0" FontSize="10.5" Margin="0,2,0,1" Click="RadioViewMode_Click"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 2. Pencere Katmanı (Her Zaman Üstte) -->
+                <TextBlock Text="Pencere Katmanı" Foreground="#38BDF8" FontWeight="SemiBold" FontSize="11" Margin="0,0,0,4"/>
+                <Border Background="#1E293B" BorderBrush="#334155" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="0,0,0,10">
+                    <StackPanel>
+                        <CheckBox x:Name="CheckAlwaysOnTop" Content="Her Zaman Üstte" Foreground="#E2E8F0" FontSize="11" FontWeight="Medium" Click="CheckAlwaysOnTop_Click"/>
+                        <TextBlock Text="Diğer pencerelerin üzerinde kalır, tıklamada odak çalmaz." Foreground="#64748B" FontSize="9.5" Margin="20,2,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 3. Opaklık -->
+                <TextBlock Text="Opaklık" Foreground="#38BDF8" FontWeight="SemiBold" FontSize="11" Margin="0,0,0,4"/>
+                <Border Background="#1E293B" BorderBrush="#334155" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="0,0,0,10">
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton x:Name="RadioOpacity100" GroupName="OpacityGroup" Content="%100" Tag="1.0" Foreground="#E2E8F0" FontSize="10.5" Margin="0,0,16,0" Click="RadioOpacity_Click"/>
+                        <RadioButton x:Name="RadioOpacity80" GroupName="OpacityGroup" Content="%80" Tag="0.8" Foreground="#E2E8F0" FontSize="10.5" Margin="0,0,16,0" Click="RadioOpacity_Click"/>
+                        <RadioButton x:Name="RadioOpacity60" GroupName="OpacityGroup" Content="%60" Tag="0.6" Foreground="#E2E8F0" FontSize="10.5" Click="RadioOpacity_Click"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 4. Monitör ve Konum -->
+                <TextBlock Text="Monitör ve Konum" Foreground="#38BDF8" FontWeight="SemiBold" FontSize="11" Margin="0,0,0,4"/>
+                <Border Background="#1E293B" BorderBrush="#334155" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="0,0,0,10">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="ComboMonitors"
+                                      Grid.Column="0"
+                                      DisplayMemberPath="DisplayName"
+                                      Margin="0,0,6,0"
+                                      Background="#0F172A"
+                                      Foreground="#000000"
+                                      FontSize="10.5"/>
+                            <Button Grid.Column="1"
+                                    Content="Monitöre Taşı"
+                                    Style="{StaticResource ActionButtonStyle}"
+                                    Click="BtnMoveToMonitor_Click"/>
+                        </Grid>
+                        <Button Content="Varsayılan Konuma Sıfırla"
+                                Style="{StaticResource ActionButtonStyle}"
+                                HorizontalAlignment="Stretch"
+                                Click="BtnResetPosition_Click"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Kapat Butonu -->
+            <Button Grid.Row="2"
+                    Content="Kapat"
+                    Style="{StaticResource ActionButtonStyle}"
+                    HorizontalAlignment="Right"
+                    Width="70"
+                    Margin="0,4,0,0"
+                    Click="BtnClose_Click"/>
+        </Grid>
+    </Border>
+</Window>

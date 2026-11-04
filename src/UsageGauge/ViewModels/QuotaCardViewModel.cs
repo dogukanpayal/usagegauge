@@ -31,7 +31,13 @@ public sealed class QuotaCardViewModel : ViewModelBase
     public string StatusText
     {
         get => _statusText;
-        set => SetProperty(ref _statusText, value);
+        set
+        {
+            if (SetProperty(ref _statusText, value))
+            {
+                OnPropertyChanged(nameof(StatusTooltipText));
+            }
+        }
     }
 
     public Brush StatusBrush
@@ -61,8 +67,18 @@ public sealed class QuotaCardViewModel : ViewModelBase
     public string? ErrorMessage
     {
         get => _errorMessage;
-        set => SetProperty(ref _errorMessage, value);
+        set
+        {
+            if (SetProperty(ref _errorMessage, value))
+            {
+                OnPropertyChanged(nameof(StatusTooltipText));
+            }
+        }
     }
+
+    public string StatusTooltipText => string.IsNullOrWhiteSpace(ErrorMessage)
+        ? $"Durum: {StatusText}"
+        : $"Durum: {StatusText}\nDetay: {ErrorMessage}";
 
     public QuotaWindowViewModel FiveHourWindow { get; }
     public QuotaWindowViewModel WeeklyWindow { get; }

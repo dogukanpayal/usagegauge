@@ -63,13 +63,74 @@ public sealed class ConfigService : IConfigService
                 sanitizedOpacity = 1.0;
             }
 
-            return config with { Opacity = sanitizedOpacity };
+            // Geriye dönük uyumluluk ve görünüm modunu doğrula:
+            // ConfigVersion < 2 ise eski sürüm 1 config'indeki "Mini", 270 px "Orta" görünümüdür.
+            // ConfigVersion == 2 ise sürüm 2 config'indeki "Mini", 200 px "Orta-Mini" görünümüdür.
+            // ConfigVersion >= 3 ise yeni yatay "Mini" görünümü doğrudan Mini olarak geçerlidir.
+            string sanitizedViewMode = SanitizeViewMode(config.ViewMode, config.ConfigVersion);
+
+            return config with
+            {
+                ConfigVersion = 3,
+                Opacity = sanitizedOpacity,
+                IsAlwaysOnTop = config.IsAlwaysOnTop,
+                ViewMode = sanitizedViewMode
+            };
         }
         catch
         {
             // Bozuk JSON veya dosya erişim hatasında güvenli varsayılan
-            return new AppConfig();
+            return new AppConfig { ConfigVersion = 3 };
         }
+    }
+
+    /// <summary>
+    /// Görünüm modunu doğrular ve geriye dönük uyumluluğu uygular.
+    /// - Sürüm 1 (configVersion &lt; 2 veya belirsiz): "Mini" -> "Orta" (270 px)
+    /// - Sürüm 2 (configVersion == 2): "Mini" -> "Orta-Mini" (200 px)
+    /// - Sürüm 3+ (configVersion &gt;= 3): "Mini" -> "Mini" (340 px yatay kompakt)
+    /// "Orta-Mini", "Orta", "Normal" ve varyasyonları doğrudan tanınır.
+    /// Geçersiz değerler varsayılan "Normal" moduna temizlenir.
+    /// </summary>
+    public static string SanitizeViewMode(string? viewMode, int configVersion = 3)
+    {
+        if (string.IsNullOrWhiteSpace(viewMode))
+        {
+            return "Normal";
+        }
+
+        if (viewMode.Equals("Orta-Mini", StringComparison.OrdinalIgnoreCase) ||
+            viewMode.Equals("Medium-Mini", StringComparison.OrdinalIgnoreCase) ||
+            viewMode.Equals("OrtaMini", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Orta-Mini";
+        }
+
+        if (viewMode.Equals("Orta", StringComparison.OrdinalIgnoreCase) ||
+            viewMode.Equals("Medium", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Orta";
+        }
+
+        if (viewMode.Equals("Mini", StringComparison.OrdinalIgnoreCase))
+        {
+            if (configVersion < 2)
+            {
+                return "Orta";
+            }
+            if (configVersion == 2)
+            {
+                return "Orta-Mini";
+            }
+            return "Mini";
+        }
+
+        if (viewMode.Equals("Normal", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Normal";
+        }
+
+        return "Normal";
     }
 
     public void SaveConfig(AppConfig config)
@@ -85,10 +146,13 @@ public sealed class ConfigService : IConfigService
             // Güvenlik denetimi: Asla hassas veri yazılmaz, yalnızca konum ve görünüm
             var sanitizedConfig = new AppConfig
             {
+                ConfigVersion = 3,
                 WindowLeft = config.WindowLeft,
                 WindowTop = config.WindowTop,
                 MonitorDeviceName = config.MonitorDeviceName,
-                Opacity = Math.Clamp(config.Opacity, 0.2, 1.0)
+                Opacity = Math.Clamp(config.Opacity, 0.2, 1.0),
+                IsAlwaysOnTop = config.IsAlwaysOnTop,
+                ViewMode = SanitizeViewMode(config.ViewMode, configVersion: 3)
             };
 
             string json = JsonSerializer.Serialize(sanitizedConfig, JsonOptions);

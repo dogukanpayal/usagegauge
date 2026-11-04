@@ -238,6 +238,7 @@ try {
         Join-Path $targetDist "UsageGauge-win-x64"
     }
 
+    $looseFolderUpdated = $false
     try {
         if (-not (Test-Path $finalBinDir)) {
             New-Item -ItemType Directory -Path $finalBinDir -Force | Out-Null
@@ -259,6 +260,7 @@ try {
                 Copy-Item -Path $_.FullName -Destination $finalBinDir -Recurse -Force
             }
         }
+        $looseFolderUpdated = $true
     }
     catch {
         $looseEx = $_
@@ -267,9 +269,8 @@ try {
         Write-Host " Dağıtım ZIP Arşivi : BAŞARILI VE GEÇERLİ ($zipPath)" -ForegroundColor Green
         Write-Host " Klasör Hedefi      : BAŞARISIZ ($finalBinDir)" -ForegroundColor Red
         Write-Host " Hata Detayı        : $($looseEx.Exception.Message)" -ForegroundColor Yellow
-        Write-Host " Açıklama           : Dağıtım ZIP paketi atomik olarak başarıyla oluşturulmuştur ve geçerlidir. Ancak '$finalBinDir' klasöründeki dosyalar (muhtemelen açık/kullanımda olduğu için) güncellenememiştir." -ForegroundColor Gray
+        Write-Host " Açıklama           : Dağıtım ZIP paketi atomik olarak başarıyla oluşturulmuştur ve geçerlidir. Ancak '$finalBinDir' klasöründeki dosyalar (çalışan UsageGauge süreci dosyayı kilitlediği için) güncellenememiştir." -ForegroundColor Gray
         Write-Host "==========================================================" -ForegroundColor Yellow
-        throw "Dağıtım ZIP paketi ($zipPath) başarıyla atomik olarak güncellendi ve geçerlidir. Ancak '$finalBinDir' klasörüne gevşek dosya kopyalaması başarısız oldu: $($looseEx.Exception.Message)"
     }
 
     $zipItem = Get-Item $zipPath
@@ -281,7 +282,11 @@ try {
     Write-Host " Paket Yolu       : $zipPath" -ForegroundColor White
     Write-Host " Paket Boyut      : $zipSizeMb MB ($($zipItem.Length) bayt)" -ForegroundColor White
     Write-Host " SHA256           : $sha256" -ForegroundColor White
-    Write-Host " Gevşek Klasör    : $finalBinDir (Güncellendi)" -ForegroundColor White
+    if ($looseFolderUpdated) {
+        Write-Host " Gevşek Klasör    : $finalBinDir (Güncellendi)" -ForegroundColor White
+    } else {
+        Write-Host " Gevşek Klasör    : $finalBinDir (Kilitli olduğu için atlandı - ZIP geçerlidir)" -ForegroundColor Yellow
+    }
     Write-Host " Atomiklik Kapsamı: Yalnızca $zipName ZIP arşivi atomiktir (Win32 ReplaceFile); çıktı klasörünün tamamı atomik değildir." -ForegroundColor Gray
     Write-Host "==========================================================" -ForegroundColor Cyan
 }

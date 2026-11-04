@@ -9,6 +9,12 @@ Windows masaüstünde **ChatGPT (Work/Codex)** ve **Google Antigravity (Gemini)*
 - **2 Havuz / 4 Kota Penceresi (2 Kart):**
   1. **ChatGPT (Work/Codex):** 5 Saatlik Pencere ve Haftalık Pencere.
   2. **Antigravity (Gemini):** 5 Saatlik Pencere ve Haftalık Pencere.
+- **Bildirim Alanı (System Tray) ve Gizle/Göster Yaşam Döngüsü:**
+  - Başlıktaki "−" (Gizle) düğmesi, "✕" düğmesi veya `Alt + F4` pencereyi kapatmak yerine Windows bildirim alanına gizler; arka planda kota takibi devam eder.
+  - Bildirim simgesine sol tıklayarak veya sağ tık menüsünden "Göster" seçilerek widget anında geri açılabilir.
+  - "Çıkış" seçildiğinde uygulama, bildirim alanı simgesi ve arka plan süreçleri tamamen sonlandırılır; hayalet simge bırakılmaz.
+- **Tek Örnek (Single-Instance) Koruması:**
+  - Widget bildirim alanına gizliyken masaüstü kısayoluna veya EXE'ye tekrar basıldığında mükerrer süreç ya da ikinci bildirim simgesi açılmaz; mevcut örnek öne getirilir.
 - **Odak Çalmayan Dinamik Z-Order Masaüstü Katmanı:** Normal pencerelerin (`Chrome`, `VS Code` vb.) arkasında kalır; pencerelerin önüne fırlamaz. Masaüstü katmanı ve pencere geçişleri WispDock modelinden uyarlanan dinamik Z-order kancası (`SetWinEventHook`, `WS_EX_NOACTIVATE`, normal uygulamalarda HWND_NOTOPMOST ve aktif pencerenin arkasına yerleştirme, masaüstüne dönüldüğünde `HWND_TOPMOST`) ile yönetilir.
 - **Masaüstünü Göster (`Win + D`) Koruması:** `Win + D` kısayoluyla masaüstüne dönüldüğünde simge durumuna küçülmez (`SC_MINIMIZE` engellemesi); masaüstü yüzeyinde görünür kalır.
 - **Çoklu Monitör ve DPI Desteği:** Monitörler arası sürükleme, DPI ölçekleme, birincil ekran değişimi ve çalışma alanı sınırları korunumu.
@@ -22,7 +28,21 @@ Windows masaüstünde **ChatGPT (Work/Codex)** ve **Google Antigravity (Gemini)*
   - **Kota Yüzdeleri:** Sağlayıcıların periyodik sorgularıyla (varsayılan 10 dakikada bir veya elle "Şimdi Yenile" ile) güncellenir; sorgular arasında yapay/tahmini yüzde değişimi yapılmaz.
   - **Geri Sayım Sayaçları:** Sağlayıcıdan gelen UTC sıfırlanma zamanı (`DateTimeOffset`) referans alınarak yerel zamanlayıcı ile saniyelik/dakikalık olarak gerçek zamanlı güncellenir.
   - Hata anında 10-15-20-30 dk üstel geri çekilme takvimi işletilir.
-- **Sağ Tık Menüsü:** Anlık "Şimdi Yenile", opaklık ayarı (%100, %80, %60), monitöre taşıma, varsayılan konuma sıfırlama ve çıkış.
+- **Ayrı Ayarlar Penceresi (`⚙`) ve Sadeleştirilmiş Menü:**
+  - Widget başlığındaki `⚙` butonuna basıldığında açılan bağımsız ayarlar penceresi (`SettingsWindow`).
+  - Görünüm Düzeni (Normal / Orta / Orta-Mini / Mini), Her Zaman Üstte, Opaklık (%100, %80, %60), Monitöre Taşı ve Varsayılan Konuma Sıfırla seçeneklerini tek merkezden yönetir.
+  - Tekil örnek (singleton) mimarisiyle ikinci pencere açmaz; widget tepsiye gizlendiğinde veya kapandığında otomatik olarak kapanır; oyunlarda veya ön plan değişimlerinde kendiliğinden açılmaz.
+  - Sağ tık menüsü sadeleştirilmiştir; yalnızca pratik işlemler ("Şimdi Yenile", "Ayarlar...", "Gizle", "Çıkış") yer alır.
+- **İsteğe Bağlı "Her Zaman Üstte" (Always on Top):**
+  - Ayarlar penceresinden tek tıkla açılıp kapatılabilir (varsayılan: kapalı).
+  - Açıldığında widget diğer normal pencerelerin üzerinde kalır (`HWND_TOPMOST`); tıklama ve sürükleme sırasında odak çalmama davranışı korunur.
+  - Kapatıldığında dinamik masaüstü Z-order katmanına geri döner (normal uygulamaların arkasında, masaüstünde görünür).
+- **Görünüm Seçenekleri (Normal / Orta / Orta-Mini / Mini):**
+  - **Normal Görünüm (340 px):** İki kartlı, ayrıntılı sayaçlar ve geniş ilerleme çubukları içeren tam görünüm.
+  - **Orta Görünüm (270 px):** Kompakt dikey panel boyutu. ChatGPT ve Antigravity için 4 kotayı kısa geri sayımlarla (`6g 3s`, `4s 27d`, `42d`, `<1d`, `Doldu`) ve durum rozetleriyle sunar.
+  - **Orta-Mini Görünüm (200 px):** Ultra kompakt dikey panel boyutu. 2x2 matriste 4 kotanın yüzdesini büyük ve okunaklı gösterir.
+  - **Mini Görünüm (340 px, Yatay Düşük Yükseklik, ~78 px):** ChatGPT ve Gemini iki satırda yer alır; ortak sabit sütunlar ile her iki satırda da kaynak adı, durum, "5 Saatlik" ve "Haftalık" kotalar aynı hizadan başlar. %100 yüzdelerde veya %125/%150 DPI ölçeklerinde hiçbir kontrol veya yüzde kesilmez.
+  - Ayrıntılı sayaç ve hata detayları fare üzerine getirildiğinde araç ipucunda (tooltip) sunulur. Sürükleme, yenileme (`[⟳]`), ayarlar (`[⚙]`), gizleme (`[—]`), kapatma (`[✕]`) tüm modlarda eksiksiz çalışır. Eski yapılandırmalardaki sürüm 1 "Mini" tercihi otomatik `"Orta"`ya, sürüm 2 "Mini" tercihi ise `"Orta-Mini"`ye göç ettirilir.
 
 ---
 
@@ -31,8 +51,13 @@ Windows masaüstünde **ChatGPT (Work/Codex)** ve **Google Antigravity (Gemini)*
 UsageGauge kurulum gerektirmeyen taşınabilir (portable) bir uygulamadır:
 
 1. Dağıtım arşivini indirin: `dist\UsageGauge-v1.0-win-x64.zip`
-2. Arşivi bilgisayarınızda dilediğiniz bir klasöre çıkartın.
-3. `UsageGauge.exe` dosyasına çift tıklayarak çalıştırın.
+2. Arşivi bilgisayarınızda kalıcı bir klasöre çıkartın (örneğin: `C:\Tools\UsageGauge`).
+3. **Masaüstü Kısayolu Oluşturun:**
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\create-desktop-shortcut.ps1 -TargetExePath "C:\Tools\UsageGauge\UsageGauge.exe"
+   ```
+   *(Geliştirme/test aşamasında `dist\UsageGauge-singlefile\UsageGauge.exe` de hedeflenebilir).*
+4. Masaüstündeki `UsageGauge.lnk` kısayoluna çift tıklayarak çalıştırın.
 
 Ayrıntılı son kullanıcı rehberi ve sorun giderme adımları için [docs/DEPLOYMENT-GUIDE.md](docs/DEPLOYMENT-GUIDE.md) belgesini inceleyebilirsiniz.
 
@@ -59,7 +84,7 @@ dotnet build UsageGauge.slnx -c Release
 ```powershell
 dotnet test UsageGauge.slnx -c Release --filter "Category!=Live"
 ```
-*(Hedef: 87 Geçen Test, 0 Hata, 0 Atlanan)*
+*(Hedef: 143 Geçen Test, 0 Hata, 0 Atlanan)*
 
 ### Dağıtım Paketi Oluşturma (Publish)
 ```powershell
@@ -77,7 +102,9 @@ Bu betik:
 
 - [docs/DEPLOYMENT-GUIDE.md](docs/DEPLOYMENT-GUIDE.md): Dağıtım, yapılandırma ve son kullanıcı kullanım kılavuzu.
 - [docs/UX-DEFINITION-v1.0.md](docs/UX-DEFINITION-v1.0.md): Ürün vizyonu, ekran tasarımı ve kabul kriterleri (AC-01..AC-06).
-- [docs/ARCHITECTURE-PLAN-v1.0.md](docs/ARCHITECTURE-PLAN-v1.0.md): Mimari tasarım, teknik kararlar ve T01–T09 aşamaları yol haritası.
+- [docs/ARCHITECTURE-PLAN-v1.0.md](docs/ARCHITECTURE-PLAN-v1.0.md): Mimari tasarım, teknik kararlar ve T01–T10 aşamaları yol haritası.
 - [docs/T07-DEVICE-ACCEPTANCE.md](docs/T07-DEVICE-ACCEPTANCE.md): Fiziksel Windows cihaz kabul testleri ve sanal saat simülasyonu kayıtları.
 - [docs/T08-RELEASE-CANDIDATE.md](docs/T08-RELEASE-CANDIDATE.md): Paketleme güvenilirliği, hata yolları denetimi ve Release Candidate kayıtları.
 - [docs/T09-FINAL-HANDOFF.md](docs/T09-FINAL-HANDOFF.md): Nihai teslimat özeti, teknik kabul ve son kullanıcı kapanış adımları.
+- [docs/T10-SHORTCUT-AND-LIFECYCLE.md](docs/T10-SHORTCUT-AND-LIFECYCLE.md): Masaüstü kısayolu, bildirim alanı yaşam döngüsü ve tekil örnek doğrulaması.
+- [docs/T11-ALWAYS-ON-TOP-AND-MINI-VIEW.md](docs/T11-ALWAYS-ON-TOP-AND-MINI-VIEW.md): İsteğe bağlı Her Zaman Üstte katmanı, kompakt Mini Görünüm ve kalıcılık doğrulaması.

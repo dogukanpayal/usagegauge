@@ -8,6 +8,17 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>UsageGauge</RootNamespace>
     <AssemblyName>UsageGauge</AssemblyName>
+    <ApplicationIcon>Resources\UsageGauge.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\UsageGauge.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>UsageGauge.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 
 </Project>

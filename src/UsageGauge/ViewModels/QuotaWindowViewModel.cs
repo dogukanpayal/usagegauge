@@ -11,6 +11,7 @@ public sealed class QuotaWindowViewModel : ViewModelBase
     private double _remainingPercent;
     private string _remainingPercentText = "--%";
     private string _countdownText = "Sıfırlanma: --";
+    private string _shortCountdownText = "—";
     private Brush _progressBrush = Brushes.SlateGray;
     private DateTimeOffset? _resetsAtUtc;
     private bool _isExpired;
@@ -44,6 +45,12 @@ public sealed class QuotaWindowViewModel : ViewModelBase
     {
         get => _countdownText;
         set => SetProperty(ref _countdownText, value);
+    }
+
+    public string ShortCountdownText
+    {
+        get => _shortCountdownText;
+        set => SetProperty(ref _shortCountdownText, value);
     }
 
     public Brush ProgressBrush
@@ -83,6 +90,7 @@ public sealed class QuotaWindowViewModel : ViewModelBase
             RemainingPercent = 0;
             RemainingPercentText = "--%";
             CountdownText = "Sıfırlanma: --";
+            ShortCountdownText = "—";
             IsExpired = false;
             ResetsAtUtc = null;
             return;
@@ -101,6 +109,7 @@ public sealed class QuotaWindowViewModel : ViewModelBase
         if (!ResetsAtUtc.HasValue)
         {
             CountdownText = "Sıfırlanma: --";
+            ShortCountdownText = "—";
             IsExpired = false;
             return;
         }
@@ -109,11 +118,13 @@ public sealed class QuotaWindowViewModel : ViewModelBase
         if (diff <= TimeSpan.Zero)
         {
             CountdownText = QuotaTimeFormatter.ExpiredText;
+            ShortCountdownText = "Doldu";
             IsExpired = true;
         }
         else
         {
             CountdownText = QuotaTimeFormatter.FormatCountdown(ResetsAtUtc, nowUtc);
+            ShortCountdownText = QuotaTimeFormatter.FormatShortCountdown(ResetsAtUtc, nowUtc);
             IsExpired = false;
         }
 
