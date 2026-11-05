@@ -34,7 +34,7 @@ Bu belge, UsageGauge projesinin **T07 Cihaz Kabul Doğrulaması** kapsamındaki 
 > [!NOTE]
 > **Sanal Saat Testi ile Fiziksel Cihaz Gözleminin Ayrımı:**
 > - **Sanal Saat Simülasyonu (Birim/Entegrasyon Testi):** Bellek içi sahte saat ile deterministik durum makinelerini, sıfırlanma eşiklerini ve UTC zaman farkı hesaplarını saniyeler içinde yaklaşık 4 saat 40 dakikalık sanal zaman akışı boyunca doğrulamıştır (PASS).
-> - **Fiziksel Cihaz Gözlemi (Kullanıcı Tarafından Yapılacak):** Kullanıcının gerçek Windows 11 ortamında uygulamanın saatler boyunca açık kalması, işletim sistemi güç yönetimi/zamanlayıcı akışı ve ağ gecikmeleri altında kotanın yapay düşmediğinin ve sayacın düzenli aktığının bizzat gözlemlenmesidir. Bu aşamada sanal saat simülasyonu tamamlanmış olup, fiziksel uzun süreli cihaz gözlemi henüz ayrıca teyit edilmemiştir (BEKLEMEDE).
+> - **Fiziksel Cihaz Gözlemi (Kullanıcı Tarafından Gerçekleştirildi):** Kullanıcının gerçek Windows 11 ortamında uygulamanın açık kaldığı süre boyunca kotanın yapay düşmediği ve sayaçların düzenli aktığı kullanıcı tarafından bizzat gözlemlenmiş ve her şeyin beklendiği gibi çalıştığı bildirilmiştir (PASS).
 
 ---
 
@@ -57,15 +57,16 @@ Bu belge, UsageGauge projesinin **T07 Cihaz Kabul Doğrulaması** kapsamındaki 
 
 ## 3. AC-04 Cihaz Gözlemi Durumu (Saatler Boyunca Gözlem)
 
-- **Durum:** **BEKLEMEDE / KISMİ (PARTIAL)**
+- **Durum:** **DOĞRULANDI (PASS)**
 - **Otomatik / Kod Doğrulaması:** **PASS** (Yaklaşık 4 saat 40 dakikalık deterministik sanal saat simülasyonu, 84 birim/entegrasyon testi ve kod incelemesi).
-- **Fiziksel Cihaz Doğrulaması:** **BEKLEMEDE (Teyit Edilmedi)**
-- **Açıklama:** Kullanıcı genel olarak "her şey dediğin gibi çalışıyor" bildiriminde bulunmuştur. Bu bildirim AC-02 kapsamındaki iki monitör ve çözünürlük/DPI adımları için geçerli kabul edilmiş; ancak widget'ın fiziksel cihazda kesintisiz kaç saat açık kaldığı, başlangıç/ara/bitiş saatleri ve sayısal kota değerleri ayrıca teyit edilmediği için saatler süren fiziksel cihaz gözlemi tamamlanmış sayılmamıştır.
+- **Fiziksel Cihaz Doğrulaması:** **PASS (Doğrulandı — Kanıt Türü: Kullanıcının manuel test bildirimi)**
+- **Açıklama:** Kullanıcı, proje sonuna bırakılan AC-04 fiziksel cihaz testini gerçekleştirdiğini ve her şeyin beklendiği gibi çalıştığını (kota yüzdesinin sağlayıcı çağrısı dışında yapay azalmadığını, geri sayım sayaçlarının düzenli aktığını ve veri dürüstlüğünün korunduğunu) bildirmiştir. Bu bildirim dayanağıyla AC-04 fiziksel cihaz kabulü PASS olarak tamamlanmıştır.
+- **Dürüstlük ve Kanıt Ayrımı:** Kullanıcı tarafından özel bir test süresi, saat dökümü, başlangıç/bitiş yüzdeleri veya ekran görüntüsü iletilmediğinden kurgusal değerler üretilmemiştir; kabul dayanağı olarak doğrudan kullanıcının test bildirimi esas alınmıştır. Sanal saat simülasyonu ise birim test seviyesindeki durum makinesi ve eşik güvencesi olarak konumlandırılmış, fiziksel gözlem yerine sunulmamıştır.
 
-### Gözlem Kriterleri ve Beklenen Davranış
-- **Yapay Azalma Olmaması:** Model çağrısı yapılmadığı sürece yüzde sabit kalmalıdır; uygulama zaman geçtikçe yüzdeyi kendiliğinden düşürmemelidir (deterministik testlerle doğrulanmıştır).
-- **Sayaç Akışı:** Sıfırlanma sayacı yerel saate göre dinamik olarak geriye doğru akmalıdır (deterministik testlerle doğrulanmıştır).
-- **Fiziksel Cihaz Gözlemi:** Kullanıcının ilerleyen süreçte fiziksel ortamda saatler süren açık kalma durumunu aşağıdaki şablon üzerinden gözlemlemesi önerilir.
+### Gözlem Kriterleri ve Doğrulanan Davranış
+- **Yapay Azalma Olmaması:** Model çağrısı yapılmadığı sürece yüzde sabit kalır; uygulama zaman geçtikçe yüzdeyi kendiliğinden düşürmez (deterministik testler ve kullanıcının fiziksel test bildirimiyle doğrulanmıştır).
+- **Sayaç Akışı:** Sıfırlanma sayacı yerel saate göre dinamik olarak geriye doğru akar (deterministik testler ve kullanıcının fiziksel test bildirimiyle doğrulanmıştır).
+- **Fiziksel Cihaz Gözlemi:** Kullanıcı tarafından fiziksel cihazda test edilmiş ve doğrulandığı teyit edilmiştir.
 
 ### Gözlem Kayıt Tablosu Şablonu
 
@@ -83,9 +84,9 @@ Bu belge, UsageGauge projesinin **T07 Cihaz Kabul Doğrulaması** kapsamındaki 
 | Alt Görev | Başlık ve Kapsam | Otomatik Doğrulama | Gerçek Cihaz Doğrulaması | Nihai Durum |
 | :--- | :--- | :---: | :---: | :---: |
 | **T07.1** | Monitör, DPI ve Çözünürlük Davranışı | **PASS** (84 test, WM_DISPLAYCHANGE kancası, sınır testleri) | **PASS** (Kullanıcının manuel test bildirimi) | **PASS** |
-| **T07.2** | Saatler Boyunca Kota ve Sayaç Doğruluğu | **PASS** (Yaklaşık 4 saat 40 dakikalık sanal saat simülasyonu) | **BEKLEMEDE** (Fiziksel cihaz gözlemi henüz ayrıca teyit edilmedi) | **PARTIAL** |
-| **T07.3** | Gerçek Cihaz Kabul Rehberi ve Teslim | **PASS** (Rehber ve form eksiksiz hazırlandı) | **HAZIR** | **PASS** |
-| **T07 GENEL** | **Cihaz Kabul Doğrulaması** | **PASS** (Tüm kod, test ve mimari gereksinimler eksiksiz) | **KISMİ** (AC-02 kullanıcı bildirimiyle kapandı; AC-04 fiziksel gözlemi beklemede) | **PARTIAL** |
+| **T07.2** | Saatler Boyunca Kota ve Sayaç Doğruluğu | **PASS** (Yaklaşık 4 saat 40 dakikalık sanal saat simülasyonu) | **PASS** (Kullanıcının manuel test bildirimi) | **PASS** |
+| **T07.3** | Gerçek Cihaz Kabul Rehberi ve Teslim | **PASS** (Rehber ve form eksiksiz hazırlandı) | **TAMAMLANDI** | **PASS** |
+| **T07 GENEL** | **Cihaz Kabul Doğrulaması** | **PASS** (Tüm kod, test ve mimari gereksinimler eksiksiz) | **PASS** (AC-02 ve AC-04 kullanıcı bildirimleriyle doğrulandı) | **PASS** |
 
 > [!NOTE]
-> Kullanıcı iki monitörlü fiziksel cihazında AC-02 çözünürlük ve taşıma adımlarını başarıyla doğrulamıştır. AC-04 kapsamındaki saatler süren fiziksel cihaz gözlemi henüz ayrıca teyit edilmediği için T07 genel durumu **PARTIAL** olarak korunmaktadır.
+> Kullanıcı iki monitörlü fiziksel cihazında AC-02 adımlarını doğrulamış; proje sonuna bırakılan AC-04 saatler süren fiziksel cihaz gözlemini de gerçekleştirerek her şeyin beklendiği gibi çalıştığını bildirmiştir. Böylece T07 genel durumu **PASS** olarak tamamlanmıştır.

@@ -124,11 +124,15 @@ Widget; dikey bloklar halinde düzenlenmiş, birbirinden net kart sınırlarıyl
 
 1. **Sürükle ve Bırak (Drag & Drop):** Kullanıcı widget başlığından veya panel boşluklarından tutarak widget'ı masaüstünde serbestçe taşıyabilir. Bırakıldığında yeni konum kaydedilir.
 2. **Elle Yenileme:** Başlıktaki `[⟳]` butonuna basıldığında beklemedeki periyot sıfırlanır ve anlık taze veri istenir.
-3. **Bağlam Menüsü (Sağ Tık):**
+3. **Ayarlar Penceresi (⚙):** Widget başlığındaki `[⚙]` düğmesine veya sağ tık menüsünden `Ayarlar...` seçeneğine basıldığında açılan bağımsız ayarlar penceresi (kendiliğinden açılmaz; yalnızca kullanıcının açık tıklamasıyla tetiklenir):
+   - **Görünüm Düzeni:** `Normal` (340 px tam detay), `Orta` (270 px dikey kompakt), `Orta-Mini` (200 px 2x2 matris) ve `Mini` (400 DIP yatay kompakt) görünümleri arasında geçiş sağlar.
+   - **Pencere Katmanı:** `Her Zaman Üstte` onay kutusu ana widget'ın diğer pencerelerin üzerinde kalmasını sağlar; ana pencerenin tıklamada odak çalmama davranışı korunur.
+   - **Opaklık:** Saydamlık seviyesini belirler (`%100`, `%80`, `%60`).
+   - **Monitör ve Konum:** Çoklu monitör kurulumlarında `Monitöre Taşı` ve pencereyi birincil ekranın sağ alt köşesine çeken `Varsayılan Konuma Sıfırla` kontrollerini sunar.
+4. **Bağlam Menüsü (Sağ Tık):** Hızlı işlemler ve Ayarlar'a erişim sunar:
    - `Şimdi Yenile`
-   - `Monitöre Taşı` (`Monitör 1` / `Monitör 2`)
-   - `Varsayılan Konuma Sıfırla`
-   - `Opaklık` (`%100`, `%80`, `%60`)
+   - `Ayarlar...` (ayrı Ayarlar penceresini açar)
+   - `Gizle (Bildirim Alanına)`
    - `Çıkış`
 
 ---
@@ -138,9 +142,9 @@ Widget; dikey bloklar halinde düzenlenmiş, birbirinden net kart sınırlarıyl
 - [x] **AC-01 (Masaüstü Katmanı ve Odak):** Widget normal pencerelerin arkasında kalır; pencerelerin önüne fırlamaz ve kendiliğinden sistem odağını çalmaz.
 - [x] **AC-02 (Çoklu Monitör ve Çalışma Alanı):** *(Doğrulandı — Kanıt Türü: Kullanıcının manuel test bildirimi)* Widget'ın iki monitör arasında serbestçe taşınması, ikinci monitöre bırakılıp kapatıldıktan sonra yeniden açıldığında konumunu koruması, çözünürlük veya DPI ölçek değişimi sonrasında ekran çalışma alanı sınırlarında kalması ve varsayılan konuma sıfırlanabilmesi kullanıcının fiziksel iki monitörlü cihazındaki manuel test bildirimiyle doğrulandı (ayrıca xUnit sınır denetim testleri ve `WM_DISPLAYCHANGE`/`WM_DPICHANGED` mesaj kancaları ile desteklenmiştir).
 - [x] **AC-03 (4 Kota Alanı):** 2 ana grupta toplam 4 kota penceresi (2 adet 5 saatlik, 2 adet haftalık) bağımsız olarak listelenir. *(T05 nihai kararıyla 3. kart olan Claude/GPT arayüzden çıkarılmıştır; 2 kart/4 kota nihai kapsamdır).*
-- [ ] **AC-04 (Veri Dürüstlüğü ve Canlı Sayaç):** *(Kısmi / Doğrulanan ve Bekleyen Ayrıldı)*
-  - *Doğrulanan (Kod ve Test Kapsamında):* Yüzde değerinin sağlayıcı yanıtı dışında yapay olarak eksiltilmemesi/değiştirilmemesi, sıfırlanma zamanına kalan sayacın yerel saat üzerinden dinamik geri sayması, sıfırlanma eşiğinde tek sorgu ve üstel geri çekilme takvimi birim testleri, kod incelemesi ve yaklaşık 4 saat 40 dakikalık deterministik sanal saat simülasyonuyla doğrulandı.
-  - *Bekleyen / Teyit Edilmemiş:* Fiziksel Windows cihazında saatler süren uzun süreli gerçek gözlem ve başlangıç/son kota kayıtları henüz ayrıca teyit edilmedi.
+- [x] **AC-04 (Veri Dürüstlüğü ve Canlı Sayaç):** *(Doğrulandı — Kanıt Türü: Kullanıcının manuel test bildirimi; otomatik birim testleri ve deterministik sanal saat simülasyonu ile desteklenmiştir)*
+  - *Fiziksel Cihaz Doğrulaması:* Kullanıcı, proje sonuna bırakılan fiziksel cihaz testini gerçekleştirdiğini ve her şeyin beklendiği gibi çalıştığını (kota yüzdelerinin sağlayıcı sorguları dışında yapay olarak eksiltilmediğini/değiştirilmediğini, sıfırlanma sayaçlarının yerel saat üzerinden dinamik olarak geri saydığını ve veri dürüstlüğünün korunduğunu) bildirmiştir. (Not: Test süresi, saatler, başlangıç/bitiş yüzdeleri veya ekran görüntüsü verilmediğinden kurgusal değerler üretilmemiş; kullanıcının doğrudan test bildirimi esas alınmıştır).
+  - *Kod ve Deterministik Simülasyon Kapsamı:* Yüzde değerinin sağlayıcı yanıtı dışında yapay olarak eksiltilmemesi/değiştirilmemesi, sıfırlanma zamanına kalan sayacın yerel saat üzerinden dinamik geri sayması, sıfırlanma eşiğinde tek sorgu ve üstel geri çekilme takvimi birim testleri, kod incelemesi ve yaklaşık 4 saat 40 dakikalık deterministik sanal saat simülasyonuyla doğrulanmıştır (bu simülasyon kod mantığı güvencesi olup, fiziksel gözlem yerine sunulmamıştır).
 - [x] **AC-05 (Ekran Bağımsızlığı):** Kullanıcının ChatGPT web sekmesini veya Antigravity `Models & Usage` ekranını açık tutması gerekmez. Her iki servis için de kota verileri bu ekranlar kapalıyken arka plandaki araçlar üzerinden okunur ve gösterilir. *(Not: Antigravity masaüstü uygulamasının sistemde tamamen kapalı olması durumu bu aşamada garanti edilmez; doğrulanmış koşul Models & Usage ekranının kapalı olmasıdır).*
 - [x] **AC-06 (Erişilebilir Okunabilirlik):** Kota dolulukları ve durumlar yalnızca renkle değil, sayısal değerler (`%XX`), kalın metinler ve açık etiketlerle sunulur.
 

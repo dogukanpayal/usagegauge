@@ -1,6 +1,6 @@
 # UsageGauge — T09: Son Teslim ve Kapanış Hazırlığı
 
-Bu belge, UsageGauge projesinin **T09 Son Teslim ve Kapanış Hazırlığı** aşamasında tamamlanan ürün özelliklerini, otomatik ve manuel doğrulama kanıtlarını, release paketi verilerini, açık kalan son kullanıcı kabul adımını (AC-04) ve nihai kapanış prosedürünü tanımlar.
+Bu belge, UsageGauge projesinin **T09 Son Teslim ve Kapanış Hazırlığı** aşamasında tamamlanan ürün özelliklerini, otomatik ve manuel doğrulama kanıtlarını, release paketi verilerini, kullanıcının manuel test bildirimiyle kapatılan AC-04 kabul adımını ve nihai kapanış prosedürünü tanımlar.
 
 ---
 
@@ -10,9 +10,10 @@ Bu belge, UsageGauge projesinin **T09 Son Teslim ve Kapanış Hazırlığı** a�
 | :--- | :--- | :---: | :--- |
 | **T09.1** | Dokümantasyon Tutarlılığı | **PASS** | Kök `README.md` tek açık giriş noktası olarak oluşturuldu. `src/UsageGauge/README.md` gerçek dizin ve dosya yapısına (Services/, Models/, ViewModels/) ve dinamik Z-order prensiplerine güncellendi; eski spike butonları/telemetrisi tarihsel bilgiye dönüştürüldü. `docs/DEPLOYMENT-GUIDE.md` ve RC kayıtları tam uyumlu hale getirildi. |
 | **T09.2** | Son Paket ve Kaynak Doğrulaması | **PASS** | `dotnet build -c Release` (0 Hata/0 Uyarı), 87/87 test koşumu tamamlandı. `scripts/publish.ps1` ile üretilen RC paketi izole temp dizinine açılarak doğrulandı; sıfır PDB, log, config veya CLI sızıntısı teyit edildi. |
-| **T09.3** | Kapanış Kaydı ve Kullanıcıya Son Test | **PASS** | Nihai teslimat dokümantasyonu tamamlandı. Mimari plana T09 satırı eklendi. AC-04 fiziksel saat gözlemi dürüstçe PARTIAL olarak korundu ve başlangıç/ara/bitiş kayıtlarını içeren pratik test yönergesi hazırlandı. |
+| **T09.3** | Kapanış Kaydı ve Kullanıcıya Son Test | **PASS** | Nihai teslimat dokümantasyonu tamamlandı. Mimari plana T09 satırı eklendi. AC-04 fiziksel saat gözlemi yönergesi hazırlandı ve kullanıcının bildirdiği test sonucuyla başarıyla kapatıldı. |
 | **TEKNİK TESLİMAT** | **T01 – T09 Kod ve Paket Hazırlığı** | **PASS** | Tüm geliştirme, mimari, güvenlik, hata yolları ve paketleme çalışmaları eksiksiz tamamlandı. |
-| **NİHAİ FİZİKSEL KABUL** | **AC-04 Uzun Süreli Cihaz Gözlemi** | **PARTIAL** | Kullanıcı tarafından proje sonunda yapılacak fiziksel saatler süren cihaz gözlemi beklenmektedir. |
+| **NİHAİ FİZİKSEL KABUL** | **AC-04 Uzun Süreli Cihaz Gözlemi** | **PASS** | Kullanıcının manuel test bildirimi dayanağıyla her şeyin beklendiği gibi çalıştığı doğrulanarak PASS olarak kapatıldı. |
+| **GENEL PROJE KABULÜ** | **AC-01 – AC-06 Kabul Ölçütleri** | **PASS** | Tüm kabul kriterleri (AC-01..AC-06) eksiksiz olarak tamamlandı (%100). |
 
 ---
 
@@ -92,41 +93,34 @@ Aşağıdaki işlevler, kullanıcının fiziksel Windows 11 ortamında (iki moni
 4. **Sağ Tık Menüsü:** "Şimdi Yenile", opaklık seviyeleri (%100, %80, %60), "Varsayılan Konuma Sıfırla" sorunsuz çalışır (**GEÇTİ**).
 5. **Kota Okuma:** ChatGPT Work/Codex ve Antigravity Gemini olmak üzere 4 kota penceresi gerçek oturumlardan başarıyla okunur (**GEÇTİ**).
 
+> [!NOTE]
+> **Sonraki T11 Güncellemesi:** T09 aşamasında sağ tık menüsünde bulunan opaklık ve konum kontrolleri, sonraki **T11** geliştirmesinde başlıktaki `[⚙]` düğmesi veya sağ tık üzerinden açılan bağımsız **Ayarlar** penceresine taşınmıştır. Dört görünüm düzeni (`Normal`, `Orta`, `Orta-Mini`, `Mini`) ve `Her Zaman Üstte` kontrolleri de bu ayrı pencerede sunulmaktadır; sağ tık menüsü ise hızlı işlemler (`Şimdi Yenile`, `Ayarlar...`, `Gizle`, `Çıkış`) için sadeleştirilmiştir (T11 kapsamındaki bu yeni kontroller T09 teslim testlerinin parçası değildir; ayrı T11 doğrulama paketinde test edilmiştir).
+
 ---
 
-## 5. Açık Kalan Tek Madde: AC-04 Uzun Süreli Fiziksel Cihaz Gözlemi (PARTIAL)
+## 5. AC-04 Uzun Süreli Fiziksel Cihaz Gözlemi Doğrulaması (PASS)
 
 ### 5.1 Mevcut Durum ve Kanıt Sınırı
 - **Kod ve Simülasyon Kapsamı (PASS):**
   - İki periyodik sorgu arasında veya model kullanılmadığında kota yüzdesinin yapay/tahmini bir algoritmayla azaltılmadığı kod düzeyinde doğrulanmıştır.
   - Geri sayım sayacının istemci yerel saat kaymalarından bağımsız UTC epoch farkı (`DateTimeOffset.UtcNow`) üzerinden geriye doğru aktığı test edilmiştir.
-  - Test ortamında ~4 saat 40 dakikalık sanal saat ilerlemesi simülasyonu başarıyla yürütülmüştür.
-- **Fiziksel Cihaz Kapsamı (Açık / PARTIAL):**
-  - Gerçek bir Windows 11 oturumunda widget'ın saatler boyunca (örneğin 1-2 saat) açık tutularak başlangıç, ara ve bitiş kayıtlarının alınması henüz tamamlanmamıştır.
-  - **Dürüstlük İlkesi:** Bu fiziksel test tamamlanmış gibi gösterilmemiş; AC-04 durumu **`PARTIAL`** olarak muhafaza edilmiştir.
+  - Test ortamında ~4 saat 40 dakikalık sanal saat ilerlemesi simülasyonu başarıyla yürütülmüştür (bu simülasyon mantık ve durum makinesi güvencesi olup, fiziksel gözlem yerine sunulmamıştır).
+- **Fiziksel Cihaz Kapsamı (PASS — Kullanıcının Manuel Test Bildirimi Dayanağıyla):**
+  - Kullanıcı, proje sonuna bırakılan fiziksel cihaz testini kendi Windows 11 ortamında gerçekleştirdiğini ve her şeyin beklendiği gibi çalıştığını (kota yüzdesinin yapay azalmadığını, sayaçların geriye doğru düzenli aktığını ve veri dürüstlüğünün korunduğunu) bildirmiştir.
+  - **Dürüstlük İlkesi:** Kullanıcı tarafından ek bir test süresi, saat dökümü, başlangıç/bitiş yüzdeleri veya ekran görüntüsü iletilmediğinden kurgusal değerler üretilmemiş; kullanıcının doğrudan teyit bildirimi kabul dayanağı olarak kaydedilmiştir.
 
-### 5.2 Kullanıcı İçin Pratik Test Rehberi (Kapanış Testi)
+### 5.2 Kullanıcı İçin Pratik Test Rehberi (Referans Kayıt)
 
 > [!NOTE]
 > 10 dakikalık periyodik sağlayıcı sorguları başarılı olduğunda, kota sıfırlanma anı geldiğinde veya başka bir oturumda/cihazda aynı hesapla model kullanıldığında yüzde değeri değişebilir; bu durum beklenen ve doğal bir yenilenmedir.
 > Testin amacı; **sağlayıcı sorguları arasında arayüzün kendi kendine yapay yüzde düşüşü üretmediğini** ve **sıfırlanma sayacının kesintisiz aktığını** doğrulamaktır.
 
-Kullanıcı dilediği bir zaman diliminde aşağıdaki 3 kayıt noktasını alarak AC-04'ü kapatabilir:
+Kullanıcının doğruladığı temel kriterler:
+1. İki sağlayıcı sorgusu arasında (veya model kullanılmadığında) yüzde yapay olarak azalmamalı, yerel tahmine dayalı düşüş sergilememelidir (Doğrulandı).
+2. Sıfırlanma sayacı yerel zamanlayıcı ile düzenli olarak geriye doğru akmalıdır (Doğrulandı).
 
-#### Gözlem Kayıt Tablosu:
-
-| Aşama | Duvar Saati (Örn) | Kalan Yüzde (ChatGPT / Antigravity) | Kalan Süre / Sayaç (5s / Haftalık) | "Son Kontrol" Zamanı | Kart Durumu / Rozeti |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **1. Başlangıç** | T₀ (Örn: 14:00) | Not edin (Örn: %85 / %90) | Not edin (Örn: 2s 14d / 4g 12s) | Not edin (Örn: 13:58) | Normal (Yeşil) |
-| **2. Ara Kontrol** | T₀ + 30–45 dk | Kontrol edin | Sayacın azaldığını görün | Güncellendiğini görün | Normal (Yeşil) |
-| **3. Bitiş** | T₀ + 1–2 saat | Kontrol edin | Sayacın aktığını görün | Güncellendiğini görün | Normal (Yeşil) |
-
-#### Doğrulanacak İki Temel Kriter:
-1. İki sağlayıcı sorgusu arasında (veya model kullanılmadığında) yüzde yapay olarak azalmamalı, yerel tahmine dayalı düşüş sergilememelidir.
-2. Sıfırlanma sayacı yerel zamanlayıcı ile düzenli olarak geriye doğru akmalıdır.
-
-### 5.3 Nihai Kabulün Kapanış Koşulu
-Kullanıcı yukarıdaki başlangıç, ara ve bitiş gözlem sonuçlarını (veya başarılı teyidini) paylaştığında:
-- `docs/UX-DEFINITION-v1.0.md` içerisindeki AC-04 maddesi `[x]` olarak işaretlenecek,
-- Mimari plandaki AC-04 durumu `PASS` olarak güncellenecek,
-- Böylece projenin tüm UX ve teknik kabul ölçütleri %100 tamamlanmış olacaktır.
+### 5.3 Nihai Kabulün Kapanış Durumu
+Kullanıcının manuel test bildirimiyle birlikte:
+- `docs/UX-DEFINITION-v1.0.md` içerisindeki AC-04 maddesi `[x]` olarak işaretlenmiştir,
+- Mimari plandaki AC-04 durumu `PASS` olarak güncellenmiştir,
+- Böylece projenin tüm UX ve teknik kabul ölçütleri (AC-01..AC-06) %100 tamamlanmıştır.

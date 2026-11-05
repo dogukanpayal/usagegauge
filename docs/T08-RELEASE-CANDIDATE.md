@@ -11,7 +11,7 @@ Bu belge, UsageGauge projesinin **T08 Son Sürüm Sağlamlaştırma** aşamasın
 | **T08.1** | Paketleme ve Güncelleme Güvenilirliği | **PASS** | `publish.ps1` tek ZIP dosyası için aynı dosya sisteminde aday dosya oluşturma ve Win32 `File.Replace` ile atomik değiştirme güvencesine kavuşturuldu. Değiştirme başarısızlığı durumunda yedeğin silinmesi engellendi (kod incelemesi güvencesi). Gevşek klasör kopyalama hatasında geçerli kalan çıktılar doğru ayrıştırıldı. Çıktı klasöründeki kullanıcı dosyaları korundu. |
 | **T08.2** | Çalışma Zamanı Hata Yolları Denetimi | **PASS** | 5 temel hata senaryosu (CLI yokluğu, oturum eksikliği, zaman aşımı, bozuk yanıt, tekil sağlayıcı hatası) kaynak ve testlerle denetlendi; `MainWindowViewModelTests` sınıfına 3 yeni regresyon testi eklendi (toplam 87 test). |
 | **T08.3** | Release Candidate ve Teslim | **PASS** | Release derlemesi (0 hata/0 uyarı), 87/87 test koşumu tamamlandı. Güncellenmiş betikle `dist\UsageGauge-v1.0-win-x64.zip` üretildi; dosya listesi, boyut, temizlik ve SHA-256 doğrulandı. |
-| **T08 GENEL** | **Son Sürüm Sağlamlaştırma** | **PASS** | Release candidate paketi hazırlandı. (AC-04 fiziksel saatler süren cihaz gözlemi kullanıcı tarafından proje sonunda yapılacaktır; PARTIAL durumunu korur). |
+| **T08 GENEL** | **Son Sürüm Sağlamlaştırma** | **PASS** | Release candidate paketi hazırlandı. (Kullanıcının proje sonu manuel test bildirimiyle AC-04 de tam olarak doğrulanmış ve PASS statüsüne geçmiştir). |
 
 ---
 
@@ -126,7 +126,7 @@ Mevcut kaynaklar (`ChatGptProvider`, `AntigravityProvider`, `QuotaScheduler`, `M
 
 ### Bilinen Sınırlar
 - **AC-02 (Çoklu Monitör ve Çalışma Alanı):** İki monitörde taşıma, çözünürlük/ölçek değişimi ve varsayılan konuma sıfırlama kullanıcının fiziksel Windows 11 cihazında başarıyla doğrulandı (**PASS**).
-- **AC-04 (Uzun Süreli Fiziksel Gözlem):** Yüzde değişmezliği, UTC sayaç hesabı ve sıfırlanma eşiği davranışları birim testleri ve ~4 saat 40 dakikalık sanal saat simülasyonu ile doğrulandı. Saatler süren kesintisiz fiziksel cihaz gözlemi proje sonunda kullanıcının takvimine bırakıldı (**PARTIAL**).
+- **AC-04 (Uzun Süreli Fiziksel Gözlem):** Yüzde değişmezliği, UTC sayaç hesabı ve sıfırlanma eşiği davranışları birim testleri ve ~4 saat 40 dakikalık sanal saat simülasyonu ile doğrulanmış; fiziksel cihaz gözlemi de kullanıcının manuel test bildirimi dayanağıyla başarıyla doğrulanmıştır (**PASS**).
 
 ### Kullanıcı İçin Son Manuel Kontrol Yönergesi
 1. `dist\UsageGauge-v1.0-win-x64.zip` arşivini veya `dist\UsageGauge-singlefile\UsageGauge.exe` dosyasını çalıştırın.
